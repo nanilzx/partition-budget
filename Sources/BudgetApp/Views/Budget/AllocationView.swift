@@ -15,6 +15,7 @@ struct AllocationView: View {
     private var allTransactions: [Transaction]
 
     @State private var amounts: [UUID: String] = [:]
+    @State private var incomeString = ""
     @State private var errorMessage: String?
 
     private let month = BudgetMonth.current
@@ -23,10 +24,23 @@ struct AllocationView: View {
         categories.filter { !$0.isHidden }
     }
 
-    private var incomeCents: Int64 {
-        allTransactions
-            .filter { $0.type == .income && $0.year == month.year && $0.month == month.month }
-            .reduce(Int64(0)) { $0 + $1.cents }
+    private var salaryIncome: Transaction? {
+        allTransactions.first {
+            $0.type == .income
+                && $0.title == "工资"
+                && $0.year == month.year
+                && $0.month == month.month
+        }
+    }
+
+    /// 收入模块里填的数字直接作为本月「工资」收入参与计算；输入不合法时回退已记录值。
+    private var effectiveIncomeCents: Int64 {
+        if let cents = Money(string: incomeString)?.cents { return cents }
+        return salaryIncomeCents
+    }
+
+    private var salaryIncomeCents: Int64 {
+        salaryIncome?.cents ?? 0
     }
 
     private var parsedAmounts: [UUID: Int64] {
@@ -42,12 +56,20 @@ struct AllocationView: View {
     }
 
     private var unallocatedCents: Int64 {
-        incomeCents - totalAllocatedCents
+        effectiveIncomeCents - totalAllocatedCents
     }
 
     var body: some View {
         NavigationStack {
             Form {
+                Section {
+                    TextField("本月工资收入（元）", text: $incomeString)
+                        .keyboardType(.decimalPad)
+                } header: {
+                    Text("本月收入")
+                } footer: {
+                    Text("这里填写的数字会直接记为本月的「工资」收入，并参与未分配计算；留空则保持已有记录不变。")
+                }
                 Section {
                     ForEach(allocatable) { category in
                         allocationRow(category)
@@ -56,14 +78,14 @@ struct AllocationView: View {
                     Text("为各分区分配本月预算（\(month.title)）")
                 } footer: {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("本月收入 \(Money(cents: incomeCents).displayText) · 已分配 \(Money(cents: totalAllocatedCents).displayText)")
+                        Text("本月收入 \(Money(cents: effectiveIncomeCents).displayText) · 已分配 \(Money(cents: totalAllocatedCents).displayText)")
                         Text(
                             unallocatedCents >= 0
                                 ? "剩余待分配 \(Money(cents: unallocatedCents).displayText)"
                                 : "超出收入 \(Money(cents: -unallocatedCents).displayText)"
                         )
                         .foregroundStyle(unallocatedCents >= 0 ? Color.green : Color.red)
-                        Text("未分配的金额不会被任何分区扣减，可以稍后再分配。本月还没有收入记录时，可先在「记一笔」里选择收入。")
+                        Text("未分配的金额不会被任何分区扣减，可以稍后再分配。")
                     }
                 }
             }
@@ -135,14 +157,27 @@ struct AllocationView: View {
             let cents = initial ?? category.defaultMonthlyCents
             amounts[category.categoryID] = Money(cents: cents).inputText
         }
+        if let salary = salaryIncome {
+            incomeString = Money(cents: salary.cents).inputText
+        }
     }
 
     private func save() {
-        let service = BudgetService(context: context)
+        let transactionService = TransactionService(context: context)
+        let allocationService = BudgetService(context: context)
         do {
+            // 收入模块：填写的数字直接记为本月「工资」收入
+            let incomeCents = Money(string: incomeString)?.cents ?? salaryIncomeCents
+            if incomeCents > 0 {
+                if let existing = salaryIncome {
+                    try transactionService.update(existing, cents: incomeCents, description: "工资")
+                } else {
+                    try transactionService.addIncome(cents: incomeCents, description: "工资", date: Date())
+                }
+            }
             for category in allocatable {
                 let cents = Money(string: amounts[category.categoryID] ?? "")?.cents ?? 0
-                try service.setInitialAllocation(
+                try allocationService.setInitialAllocation(
                     categoryID: category.categoryID,
                     month: month,
                     cents: cents

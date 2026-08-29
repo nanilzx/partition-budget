@@ -11,7 +11,6 @@ struct CategoryFormSheet: View {
     @State private var name = ""
     @State private var icon = "folder"
     @State private var colorHex = "#3B82F6"
-    @State private var monthlyAmountString = ""
     @State private var carryOverEnabled = false
     @State private var isSavingCategory = false
     @State private var errorMessage: String?
@@ -43,14 +42,12 @@ struct CategoryFormSheet: View {
                     }
                 }
                 Section {
-                    TextField("每月预算（元），可留空", text: $monthlyAmountString)
-                        .keyboardType(.decimalPad)
                     Toggle("余额结转", isOn: $carryOverEnabled)
                     Toggle("储蓄类分区", isOn: $isSavingCategory)
                 } header: {
                     Text("预算设置")
                 } footer: {
-                    Text("余额结转：本月没用完的预算自动加到下个月。储蓄类分区不计入日常可花金额，适合储蓄、应急金等。")
+                    Text("余额结转：本月没用完的预算自动加到下个月。储蓄类分区不计入日常可花金额。每月预算在「分配」页设置（长按首页分区卡片进入）。")
                 }
                 if let errorMessage {
                     Section {
@@ -114,16 +111,12 @@ struct CategoryFormSheet: View {
         name = category.name
         icon = category.icon
         colorHex = category.colorHex
-        monthlyAmountString = category.defaultMonthlyCents == 0
-            ? ""
-            : Money(cents: category.defaultMonthlyCents).inputText
         carryOverEnabled = category.carryOverEnabled
         isSavingCategory = category.isSavingCategory
     }
 
     private func save() {
         do {
-            let cents = Money(string: monthlyAmountString)?.cents ?? 0
             let service = BudgetService(context: context)
             if let category = editingCategory {
                 try service.updateCategory(
@@ -131,7 +124,6 @@ struct CategoryFormSheet: View {
                     name: name,
                     icon: icon,
                     colorHex: colorHex,
-                    defaultMonthlyCents: cents,
                     carryOverEnabled: carryOverEnabled,
                     isSavingCategory: isSavingCategory
                 )
@@ -140,7 +132,7 @@ struct CategoryFormSheet: View {
                     name: name,
                     icon: icon,
                     colorHex: colorHex,
-                    defaultMonthlyCents: cents,
+                    defaultMonthlyCents: 0,
                     carryOverEnabled: carryOverEnabled,
                     isSavingCategory: isSavingCategory
                 )

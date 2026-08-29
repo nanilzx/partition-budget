@@ -202,6 +202,14 @@ struct HomeView: View {
                 } label: {
                     BudgetCategoryRowView(card: card)
                 }
+                .contextMenu {
+                    Button {
+                        showingAllocation = true
+                        DS.Haptic.tap()
+                    } label: {
+                        Label("分配本月预算", systemImage: "slider.horizontal.3")
+                    }
+                }
             }
         }
     }
@@ -223,6 +231,14 @@ struct HomeView: View {
                             }
                         } label: {
                             BudgetCategoryRowView(card: card)
+                        }
+                        .contextMenu {
+                            Button {
+                                showingAllocation = true
+                                DS.Haptic.tap()
+                            } label: {
+                                Label("分配本月预算", systemImage: "slider.horizontal.3")
+                            }
                         }
                     }
                 }

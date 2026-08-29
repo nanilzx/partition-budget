@@ -18,7 +18,6 @@ struct BudgetView: View {
     @State private var showingCategoryForm = false
     @State private var editingCategory: BudgetCategory?
     @State private var showingTransfer = false
-    @State private var showingAllocation = false
     @State private var deleteCandidate: BudgetCategory?
     @State private var showDeleteConfirm = false
     @State private var showInUseAlert = false
@@ -66,7 +65,6 @@ struct BudgetView: View {
                 CategoryFormSheet(editingCategory: category)
             }
             .sheet(isPresented: $showingTransfer) { TransferSheet() }
-            .sheet(isPresented: $showingAllocation) { AllocationView() }
             .confirmationDialog(
                 "确认删除分区",
                 isPresented: $showDeleteConfirm,
@@ -120,15 +118,10 @@ struct BudgetView: View {
                 Text(Money(cents: unallocatedCents).displayText)
                     .foregroundStyle(unallocatedCents < 0 ? Color.red : Color.primary)
             }
-            Button {
-                showingAllocation = true
-            } label: {
-                Label("分配本月预算", systemImage: "slider.horizontal.3")
-            }
         } header: {
             Text("本月预算（\(month.title)）")
         } footer: {
-            Text("未分配 = 本月收入 − 已分配。给各分区分好钱后，消费才会从对应分区扣除。")
+            Text("未分配 = 本月收入 − 已分配。长按首页的分区卡片可以进入「分配本月预算」。")
         }
     }
 
@@ -209,23 +202,18 @@ struct BudgetView: View {
                         .foregroundStyle(Color(hex: category.colorHex))
                 }
                 .frame(width: 34, height: 34)
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 6) {
-                        Text(category.name)
-                            .foregroundStyle(category.isHidden ? Color.secondary : Color.primary)
-                        if category.isSavingCategory {
-                            tag("储蓄", color: .green)
-                        }
-                        if category.carryOverEnabled {
-                            tag("结转", color: .blue)
-                        }
-                        if category.isHidden {
-                            tag("已隐藏", color: .gray)
-                        }
+                HStack(spacing: 6) {
+                    Text(category.name)
+                        .foregroundStyle(category.isHidden ? Color.secondary : Color.primary)
+                    if category.isSavingCategory {
+                        tag("储蓄", color: .green)
                     }
-                    Text("默认 \(Money(cents: category.defaultMonthlyCents).displayText)/月")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    if category.carryOverEnabled {
+                        tag("结转", color: .blue)
+                    }
+                    if category.isHidden {
+                        tag("已隐藏", color: .gray)
+                    }
                 }
                 Spacer()
                 VStack(alignment: .trailing, spacing: 2) {
