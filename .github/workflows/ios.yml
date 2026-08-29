@@ -1,0 +1,66 @@
+name: iOS 编译与测试
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: 编译 + 单元测试
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 XcodeGen
+        run: brew install xcodegen
+
+      - name: 生成 Xcode 工程
+        run: xcodegen generate
+
+      - name: 运行单元测试
+        run: |
+          xcodebuild test \
+            -project PartitionBudget.xcodeproj \
+            -scheme BudgetApp \
+            -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
+            -skipMacroValidation
+
+  ipa:
+    name: 打包未签名 IPA
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 XcodeGen
+        run: brew install xcodegen
+
+      - name: 生成 Xcode 工程
+        run: xcodegen generate
+
+      - name: Archive（不签名）
+        run: |
+          xcodebuild archive \
+            -project PartitionBudget.xcodeproj \
+            -scheme BudgetApp \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/BudgetApp.xcarchive \
+            -skipMacroValidation \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO
+
+      - name: 打包 IPA
+        run: |
+          mkdir -p build/Payload
+          cp -R "build/BudgetApp.xcarchive/Products/Applications/BudgetApp.app" build/Payload/
+          cd build
+          zip -qry BudgetApp-unsigned.ipa Payload
+          ls -la BudgetApp-unsigned.ipa
+
+      - name: 上传 IPA 构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: BudgetApp-unsigned-ipa
+          path: build/BudgetApp-unsigned.ipa
+          retention-days: 30
