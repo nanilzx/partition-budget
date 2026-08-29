@@ -69,8 +69,12 @@ struct Money: Hashable, Comparable, Codable, Sendable {
 
     private static let yuanGroupFormatter: NumberFormatter = {
         let formatter = NumberFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
+        // 分组行为全部显式指定：en_US_POSIX 按惯例不带千分位分隔符，不能依赖 locale 隐含值
+        formatter.locale = Locale(identifier: "en_US")
         formatter.numberStyle = .decimal
+        formatter.usesGroupingSeparator = true
+        formatter.groupingSeparator = ","
+        formatter.groupingSize = 3
         formatter.maximumFractionDigits = 0
         return formatter
     }()
