@@ -29,6 +29,10 @@ struct BudgetCategoryRowView: View {
                     Text("已超支")
                         .font(.caption2)
                         .foregroundStyle(.red)
+                } else if card.status == .unallocated {
+                    Text("未分配")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
                 } else {
                     Text("还剩 \(card.percentOfRemaining)")
                         .font(.caption2)
@@ -36,7 +40,7 @@ struct BudgetCategoryRowView: View {
                 }
             }
             Text(remainingText)
-                .font(.system(.title3, design: .rounded).weight(.semibold))
+                .font(.system(.body, design: .rounded).weight(.semibold))
                 .foregroundStyle(card.remainingCents < 0 ? Color.red : Color.primary)
                 .contentTransition(.numericText())
             Text("已使用 \(Money(cents: card.spentCents).displayText) / \(Money(cents: card.budgetCents).displayText)")

@@ -1,6 +1,5 @@
 import SwiftUI
 import SwiftData
-import PhotosUI
 
 /// 首页：只回答一个问题——每个用途的钱还剩多少。
 /// 结构参照 Apple Health/Wallet：大数字焦点 + 轻量列表分区，无卡片堆叠。
@@ -24,10 +23,6 @@ struct HomeView: View {
     @State private var selectedMonth = BudgetMonth.current
     @State private var showingAddSheet = false
     @State private var showingAllocation = false
-    @State private var showingPhotoPicker = false
-    @State private var pickedItem: PhotosPickerItem?
-    @State private var isRecognizing = false
-    @State private var recognizeError: String?
     @State private var editing: Transaction?
 
     private var monthTransactions: [Transaction] {
@@ -77,23 +72,6 @@ struct HomeView: View {
         .sheet(item: $editing) { txn in
             AddTransactionSheet(editingTransaction: txn)
         }
-        .photosPicker(isPresented: $showingPhotoPicker, selection: $pickedItem, matching: .images)
-        .onChange(of: pickedItem) { _, newItem in
-            guard let item = newItem else { return }
-            pickedItem = nil
-            Task { await recognize(from: item) }
-        }
-        .alert(
-            "截图识别",
-            isPresented: Binding(
-                get: { recognizeError != nil },
-                set: { if !$0 { recognizeError = nil } }
-            )
-        ) {
-            Button("好", role: .cancel) {}
-        } message: {
-            Text(recognizeError ?? "")
-        }
     }
 
     // MARK: - 主列表
@@ -109,72 +87,24 @@ struct HomeView: View {
         .navigationTitle("分区预算")
         .navigationBarTitleDisplayMode(.inline)
         .overlay(alignment: .bottomTrailing) {
-            floatingButtons
-        }
-        .overlay {
-            if isRecognizing {
-                recognizingOverlay
-            }
+            floatingAddButton
         }
     }
 
-    /// 悬浮玻璃按钮组：截图识别 + 记一笔（整个 App 最重要的两个操作）。
-    private var floatingButtons: some View {
-        VStack(spacing: 10) {
-            Button {
-                showingPhotoPicker = true
-                DS.Haptic.tap()
-            } label: {
-                Label("截图识别", systemImage: "doc.text.viewfinder")
-                    .font(.subheadline.weight(.semibold))
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-            }
-            .dsGlass(.interactive, in: Capsule())
-            .foregroundStyle(.primary)
-
-            Button {
-                showingAddSheet = true
-            } label: {
-                Label("记一笔", systemImage: "plus")
-                    .font(.subheadline.weight(.semibold))
-                    .padding(.horizontal, 18)
-                    .padding(.vertical, 13)
-            }
-            .dsGlass(.interactive, in: Capsule())
-            .foregroundStyle(.primary)
+    /// 悬浮玻璃「记一笔」：整个 App 最重要的操作。
+    private var floatingAddButton: some View {
+        Button {
+            showingAddSheet = true
+        } label: {
+            Label("记一笔", systemImage: "plus")
+                .font(.subheadline.weight(.semibold))
+                .padding(.horizontal, 18)
+                .padding(.vertical, 13)
         }
+        .dsGlass(.interactive, in: Capsule())
+        .foregroundStyle(.primary)
         .padding(.trailing, DS.padding)
         .padding(.bottom, 6)
-    }
-
-    private var recognizingOverlay: some View {
-        VStack(spacing: 12) {
-            ProgressView()
-                .controlSize(.large)
-            Text("正在本机识别截图…")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-        .padding(24)
-        .dsGlass(.regular, in: RoundedRectangle(cornerRadius: DS.glassCornerRadius))
-    }
-
-    /// 相册选图 → 本机 OCR → 弹出确认单。
-    @MainActor
-    private func recognize(from item: PhotosPickerItem) async {
-        isRecognizing = true
-        defer { isRecognizing = false }
-        guard let data = try? await item.loadTransferable(type: Data.self),
-              let image = UIImage(data: data) else {
-            recognizeError = "读取图片失败，请重试。"
-            return
-        }
-        if let prefill = await ScreenshotOCR.recognizePrefill(in: image) {
-            CaptureIntake.shared.present(prefill)
-        } else {
-            recognizeError = "未能从截图识别出金额。\n请换一张「付款成功」页面再试，或手动记一笔。"
-        }
     }
 
     /// 顶部：月份切换（玻璃容器）+ 「本月还可使用」大数字焦点，浮在内容之上。
@@ -187,7 +117,9 @@ struct HomeView: View {
                     .foregroundStyle(.secondary)
                     .padding(.top, 2)
                 Text(Money(cents: summary.remainingCents).displayText)
-                    .font(.system(.largeTitle, design: .rounded).weight(.bold))
+                    .font(.system(size: 50, weight: .heavy, design: .rounded))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
                     .foregroundStyle(summary.remainingCents < 0 ? Color.red : Color.primary)
                     .contentTransition(.numericText())
                     .animation(.easeOut(duration: 0.25), value: summary.remainingCents)

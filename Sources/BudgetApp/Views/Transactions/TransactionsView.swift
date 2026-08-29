@@ -22,6 +22,7 @@ struct TransactionsView: View {
     @State private var filter = TransactionFilter()
     @State private var showingFilter = false
     @State private var showingAddSheet = false
+    @State private var showingStats = false
     @State private var editing: Transaction?
     @State private var pendingDelete: Transaction?
     @State private var quickCategoryTarget: Transaction?
@@ -91,6 +92,13 @@ struct TransactionsView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
+                        showingStats = true
+                    } label: {
+                        Image(systemName: "chart.bar")
+                    }
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
                         showingAddSheet = true
                     } label: {
                         Image(systemName: "plus")
@@ -111,6 +119,9 @@ struct TransactionsView: View {
             .searchable(text: $searchText, prompt: "搜索 麦当劳 / Steam / 备注…")
             .sheet(isPresented: $showingFilter) {
                 TransactionFilterSheet(filter: $filter)
+            }
+            .sheet(isPresented: $showingStats) {
+                StatsView()
             }
             .sheet(isPresented: $showingAddSheet) {
                 AddTransactionSheet()

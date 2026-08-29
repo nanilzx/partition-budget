@@ -169,10 +169,15 @@ struct BudgetView: View {
             } label: {
                 Label("预算转移", systemImage: "arrow.left.arrow.right")
             }
+            NavigationLink {
+                SavingGoalListView()
+            } label: {
+                Label("储蓄目标", systemImage: "target")
+            }
         } header: {
             Text("工具")
         } footer: {
-            Text("在分区之间重新分配本月的剩余额度。")
+            Text("在分区之间重新分配本月剩余额度；为储蓄分区设立目标并追踪进度。")
         }
     }
 
