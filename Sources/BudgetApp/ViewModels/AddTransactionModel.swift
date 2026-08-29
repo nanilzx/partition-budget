@@ -49,6 +49,18 @@ final class AddTransactionModel {
         userPickedCategory = true
     }
 
+    /// 截图/短信识别结果的预填：不锁定分类，让推荐机制自动选。
+    func load(capture: CapturePrefill) {
+        editing = nil
+        isIncome = false
+        amountString = Money(cents: capture.amountCents).inputText
+        merchantText = capture.merchant
+        note = ""
+        date = capture.date
+        selectedCategoryID = nil
+        userPickedCategory = false
+    }
+
     func selectCategory(_ category: BudgetCategory) {
         selectedCategoryID = category.categoryID
         userPickedCategory = true

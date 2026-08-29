@@ -11,8 +11,8 @@ settings:
     CODE_SIGN_STYLE: Automatic
     DEVELOPMENT_TEAM: ""
     GENERATE_INFOPLIST_FILE: "YES"
-    MARKETING_VERSION: "0.1.0"
-    CURRENT_PROJECT_VERSION: "1"
+    MARKETING_VERSION: "0.2.0"
+    CURRENT_PROJECT_VERSION: "2"
 
 targets:
   BudgetApp:
@@ -20,16 +20,49 @@ targets:
     platform: iOS
     sources:
       - Sources/BudgetApp
+      - Sources/Shared
+    dependencies:
+      - target: CaptureShareExtension
+        embed: true
+    info:
+      path: Sources/BudgetApp/Info.plist
+      properties:
+        CFBundleDisplayName: 分区预算
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        NSFaceIDUsageDescription: 用于在解锁时验证你的身份，保护预算数据。
+        CFBundleURLTypes:
+          - CFBundleURLName: com.partitionbudget.app.capture
+            CFBundleURLSchemes:
+              - partitionbudget
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.partitionbudget.app
         TARGETED_DEVICE_FAMILY: "1"
-        INFOPLIST_KEY_CFBundleDisplayName: "分区预算"
-        INFOPLIST_KEY_UILaunchScreen_Generation: "YES"
-        INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait"
-        INFOPLIST_KEY_NSFaceIDUsageDescription: "用于在解锁时验证你的身份，保护预算数据。"
         ASSETCATALOG_COMPILER_APPICON_NAME: "AppIcon"
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: "AccentColor"
+
+  CaptureShareExtension:
+    type: app-extension
+    platform: iOS
+    sources:
+      - Sources/CaptureShareExtension
+      - Sources/Shared
+    info:
+      path: Sources/CaptureShareExtension/Info.plist
+      properties:
+        CFBundleDisplayName: 分区预算
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.share-services
+          NSExtensionPrincipalClass: ShareViewController
+          NSExtensionAttributes:
+            NSExtensionActivationRule:
+              NSExtensionActivationSupportsImageWithMaxCount: 5
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.partitionbudget.app.capture
+        TARGETED_DEVICE_FAMILY: "1"
 
   BudgetAppTests:
     type: bundle.unit-test

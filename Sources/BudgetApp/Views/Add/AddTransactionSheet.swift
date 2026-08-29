@@ -2,8 +2,10 @@ import SwiftUI
 import SwiftData
 
 /// 「记一笔」：新增与编辑共用。最少只需金额 + 描述，分类由推荐预选。
+/// 传入 capture 时为「截图/短信识别的待确认入账」模式。
 struct AddTransactionSheet: View {
     var editingTransaction: Transaction? = nil
+    var capture: CapturePrefill? = nil
 
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
@@ -18,6 +20,12 @@ struct AddTransactionSheet: View {
         allCategories.filter {
             !$0.isHidden || $0.categoryID == model.selectedCategoryID
         }
+    }
+
+    private var title: String {
+        if editingTransaction != nil { return "编辑记录" }
+        if capture != nil { return "确认消费" }
+        return "记一笔"
     }
 
     var body: some View {
@@ -44,7 +52,7 @@ struct AddTransactionSheet: View {
                     TextField("备注", text: $model.note, axis: .vertical)
                 }
             }
-            .navigationTitle(editingTransaction == nil ? "记一笔" : "编辑记录")
+            .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -56,7 +64,12 @@ struct AddTransactionSheet: View {
                 }
             }
             .onAppear {
-                model.load(editingTransaction: editingTransaction)
+                if let capture {
+                    model.load(capture: capture)
+                    model.suggestCategory(context: context)
+                } else {
+                    model.load(editingTransaction: editingTransaction)
+                }
             }
             .confirmationDialog(overBudgetTitle, isPresented: $model.showOverBudgetDialog, titleVisibility: .visible) {
                 Button("仍然记录（余额将为负）") {
