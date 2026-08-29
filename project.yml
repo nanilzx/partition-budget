@@ -11,8 +11,8 @@ settings:
     CODE_SIGN_STYLE: Automatic
     DEVELOPMENT_TEAM: ""
     GENERATE_INFOPLIST_FILE: "YES"
-    MARKETING_VERSION: "0.3.1"
-    CURRENT_PROJECT_VERSION: "4"
+    MARKETING_VERSION: "0.3.2"
+    CURRENT_PROJECT_VERSION: "5"
 
 targets:
   BudgetApp:
@@ -21,9 +21,6 @@ targets:
     sources:
       - Sources/BudgetApp
       - Sources/Shared
-    dependencies:
-      - target: CaptureShareExtension
-        embed: true
     info:
       path: Sources/BudgetApp/Info.plist
       properties:
@@ -31,37 +28,12 @@ targets:
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
-        CFBundleURLTypes:
-          - CFBundleURLName: com.partitionbudget.app.capture
-            CFBundleURLSchemes:
-              - partitionbudget
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.partitionbudget.app
         TARGETED_DEVICE_FAMILY: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: "AppIcon"
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: "AccentColor"
-
-  CaptureShareExtension:
-    type: app-extension
-    platform: iOS
-    sources:
-      - Sources/CaptureShareExtension
-      - Sources/Shared
-    info:
-      path: Sources/CaptureShareExtension/Info.plist
-      properties:
-        CFBundleDisplayName: 分区预算
-        NSExtension:
-          NSExtensionPointIdentifier: com.apple.share-services
-          NSExtensionPrincipalClass: ShareViewController
-          NSExtensionAttributes:
-            NSExtensionActivationRule:
-              NSExtensionActivationSupportsImageWithMaxCount: 5
-    settings:
-      base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.partitionbudget.app.capture
-        TARGETED_DEVICE_FAMILY: "1"
 
   BudgetAppTests:
     type: bundle.unit-test

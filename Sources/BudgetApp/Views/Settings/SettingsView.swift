@@ -77,6 +77,7 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("我的")
+            .navigationBarTitleDisplayMode(.large)
             .fileExporter(
                 isPresented: $showingExporter,
                 document: exportDocument,

@@ -80,23 +80,4 @@ final class CaptureParserTests: XCTestCase {
         XCTAssertNil(CaptureParser.parseBankSMS("您的验证码是123456，请勿泄露。", now: now))
         XCTAssertNil(CaptureParser.parseBankSMS("", now: now))
     }
-
-    // MARK: - 传输载荷
-
-    func testPayloadDataURLRoundTrip() throws {
-        let payload = CapturePayload(cents: 3600, merchant: "麦当劳", timestamp: now, source: "截图识别")
-        let url = try XCTUnwrap(payload.encodedDataURL())
-        XCTAssertTrue(url.hasPrefix("partitionbudget://capture?d="))
-        let raw = String(url.dropFirst("partitionbudget://capture?d=".count))
-        XCTAssertEqual(CapturePayload.decodeBase64(raw), payload)
-    }
-
-    func testClipboardDecode() throws {
-        let payload = CapturePayload(cents: 1980, merchant: "瑞幸", timestamp: now, source: "截图识别")
-        let encoded = try XCTUnwrap(payload.encodedDataURL())
-        let raw = String(encoded.dropFirst("partitionbudget://capture?d=".count))
-        let text = CapturePayload.clipboardPrefix + raw
-        XCTAssertEqual(CapturePayload.decodeClipboard(text), payload)
-        XCTAssertNil(CapturePayload.decodeClipboard("普通复制的内容"))
-    }
 }

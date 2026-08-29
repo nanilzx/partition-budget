@@ -48,6 +48,7 @@ struct BudgetView: View {
                 toolsSection
             }
             .navigationTitle("预算")
+            .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {

@@ -15,13 +15,4 @@ struct CapturePrefill: Identifiable, Equatable {
         self.date = date
         self.source = source
     }
-
-    init(payload: CapturePayload) {
-        self.init(
-            amountCents: payload.cents,
-            merchant: payload.merchant,
-            date: payload.timestamp,
-            source: payload.source
-        )
-    }
 }

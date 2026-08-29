@@ -9,4 +9,3 @@ build/
 # 本工程的 .xcodeproj 由 XcodeGen 生成（见 project.yml），不纳入版本管理
 # Info.plist 同样由 XcodeGen 从 project.yml 的 info.properties 生成
 Sources/BudgetApp/Info.plist
-Sources/CaptureShareExtension/Info.plist

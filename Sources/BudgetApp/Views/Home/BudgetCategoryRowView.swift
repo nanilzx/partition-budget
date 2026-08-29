@@ -36,7 +36,7 @@ struct BudgetCategoryRowView: View {
                 }
             }
             Text(remainingText)
-                .font(.title3.weight(.semibold))
+                .font(.system(.title3, design: .rounded).weight(.semibold))
                 .foregroundStyle(card.remainingCents < 0 ? Color.red : Color.primary)
                 .contentTransition(.numericText())
             Text("已使用 \(Money(cents: card.spentCents).displayText) / \(Money(cents: card.budgetCents).displayText)")

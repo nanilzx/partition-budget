@@ -87,6 +87,7 @@ struct TransactionsView: View {
                 }
             }
             .navigationTitle("记录")
+            .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {

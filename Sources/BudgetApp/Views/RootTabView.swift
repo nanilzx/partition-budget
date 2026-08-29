@@ -4,7 +4,6 @@ import SwiftData
 struct RootTabView: View {
     @Environment(AppRouter.self) private var router
     @Environment(\.modelContext) private var context
-    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         @Bindable var router = router
@@ -29,16 +28,6 @@ struct RootTabView: View {
                 try MonthlyBudgetService(context: context).ensureMonthlyBudget(for: .current)
             } catch {
                 // 数据库异常时不阻塞 App 启动，界面呈现空状态
-            }
-        }
-        .onOpenURL { url in
-            // 分享扩展识别结果 → URL Scheme 通道
-            CaptureIntake.shared.ingestURL(url)
-        }
-        .onChange(of: scenePhase) { _, phase in
-            // 分享扩展识别结果 → 剪贴板兜底通道
-            if phase == .active {
-                CaptureIntake.shared.checkClipboard()
             }
         }
         .sheet(item: Binding(
