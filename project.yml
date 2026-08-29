@@ -31,7 +31,6 @@ targets:
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
-        NSFaceIDUsageDescription: 用于在解锁时验证你的身份，保护预算数据。
         CFBundleURLTypes:
           - CFBundleURLName: com.partitionbudget.app.capture
             CFBundleURLSchemes:

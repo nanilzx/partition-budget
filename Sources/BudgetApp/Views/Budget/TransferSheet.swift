@@ -153,6 +153,7 @@ struct TransferSheet: View {
                 month: month,
                 note: note
             )
+            DS.Haptic.success()
             dismiss()
             onCompleted?()
         } catch {

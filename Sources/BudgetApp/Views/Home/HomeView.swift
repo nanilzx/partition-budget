@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 
 /// 首页：只回答一个问题——每个用途的钱还剩多少。
+/// 结构参照 Apple Health/Wallet：大数字焦点 + 轻量列表分区，无卡片堆叠。
 struct HomeView: View {
     @Environment(\.modelContext) private var context
     @Environment(AppRouter.self) private var router
@@ -23,7 +24,6 @@ struct HomeView: View {
     @State private var showingAddSheet = false
     @State private var showingAllocation = false
     @State private var editing: Transaction?
-    @State private var detailCategory: BudgetCategory?
 
     private var monthTransactions: [Transaction] {
         allTransactions.filter { $0.year == selectedMonth.year && $0.month == selectedMonth.month }
@@ -46,8 +46,6 @@ struct HomeView: View {
         )
     }
 
-    private var recentTransactions: [Transaction] { monthTransactions }
-
     /// 实际资产（规格第十一节）：与预算分开统计，只计「计入总资产」的账户。
     private var netWorthCents: Int64? {
         guard !accounts.isEmpty else { return nil }
@@ -56,93 +54,106 @@ struct HomeView: View {
             guard let id = txn.accountID else { continue }
             deltas[id, default: 0] += (txn.type == .income ? txn.cents : -txn.cents)
         }
-        let total = accounts
+        return accounts
             .filter(\.includeInNetWorth)
             .reduce(Int64(0)) { $0 + $1.openingBalanceCents + (deltas[$1.accountID] ?? 0) }
-        return total
     }
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 16) {
-                    monthNavigator
-                    if categories.isEmpty {
-                        emptyState
-                    } else {
-                        OverviewHeaderView(summary: summary, netWorthCents: netWorthCents) { showingAllocation = true }
-                        addTransactionButton
-                        dailySection
-                        savingSection
-                        recentSection
-                    }
+            if categories.isEmpty {
+                emptyState
+            } else {
+                homeList
+            }
+        }
+        .sheet(isPresented: $showingAddSheet) { AddTransactionSheet() }
+        .sheet(isPresented: $showingAllocation) { AllocationView() }
+        .sheet(item: $editing) { txn in
+            AddTransactionSheet(editingTransaction: txn)
+        }
+    }
+
+    // MARK: - 主列表
+
+    private var homeList: some View {
+        List {
+            heroSection
+            dailySection
+            savingSection
+            recentSection
+        }
+        .navigationTitle("分区预算")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button {
+                    showingAddSheet = true
+                } label: {
+                    Image(systemName: "plus")
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
-                .padding(.bottom, 24)
-            }
-            .background(Color(.systemGroupedBackground))
-            .navigationTitle("分区预算")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        showingAddSheet = true
-                    } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.title3)
-                    }
-                }
-            }
-            .sheet(isPresented: $showingAddSheet) { AddTransactionSheet() }
-            .sheet(isPresented: $showingAllocation) { AllocationView() }
-            .sheet(item: $editing) { txn in
-                AddTransactionSheet(editingTransaction: txn)
-            }
-            .sheet(item: $detailCategory) { category in
-                CategoryTransactionsSheet(category: category, month: selectedMonth)
             }
         }
     }
 
-    // MARK: - 子视图
+    /// 顶部：月份切换 + 「本月还可使用」大数字焦点。
+    private var heroSection: some View {
+        Section {
+            VStack(alignment: .leading, spacing: 6) {
+                monthNavigator
+                Text("本月还可使用")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 2)
+                Text(Money(cents: summary.remainingCents).displayText)
+                    .font(.system(.largeTitle, design: .rounded).weight(.bold))
+                    .foregroundStyle(summary.remainingCents < 0 ? Color.red : Color.primary)
+                    .contentTransition(.numericText())
+                    .animation(.easeOut(duration: 0.25), value: summary.remainingCents)
+                Text("已使用 \(Money(cents: summary.spentCents).displayText) · 总预算 \(Money(cents: summary.totalBudgetCents).displayText)")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                if let netWorthCents {
+                    Text("实际资产 \(Money(cents: netWorthCents).displayText)")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
+            }
+            .padding(.vertical, 4)
+            .listRowBackground(Color.clear)
+        }
+    }
 
     private var monthNavigator: some View {
         HStack {
-            monthButton("chevron.left") { selectedMonth = selectedMonth.previous }
+            Button {
+                selectedMonth = selectedMonth.previous
+            } label: {
+                Image(systemName: "chevron.left")
+                    .font(.subheadline.weight(.semibold))
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.tint)
             Spacer()
-            Text(selectedMonth.title)
-                .font(.headline)
+            VStack(spacing: 0) {
+                Text("\(selectedMonth.month)月")
+                    .font(.headline)
+                Text(String(selectedMonth.year))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
             Spacer()
             if selectedMonth < BudgetMonth.current {
-                monthButton("chevron.right") { selectedMonth = selectedMonth.next }
-            } else {
-                Color.clear.frame(width: 36, height: 36)
+                Button {
+                    selectedMonth = selectedMonth.next
+                } label: {
+                    Image(systemName: "chevron.right")
+                        .font(.subheadline.weight(.semibold))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.tint)
             }
         }
-    }
-
-    private func monthButton(_ systemImage: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.subheadline.weight(.semibold))
-                .frame(width: 36, height: 36)
-                .background(Color(.secondarySystemGroupedBackground))
-                .clipShape(Circle())
-        }
-        .buttonStyle(.plain)
-    }
-
-    private var addTransactionButton: some View {
-        Button {
-            showingAddSheet = true
-        } label: {
-            Label("记一笔", systemImage: "plus")
-                .font(.headline)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
-        }
-        .buttonStyle(.borderedProminent)
     }
 
     private var dailySection: some View {
@@ -152,15 +163,14 @@ struct HomeView: View {
             transactions: monthTransactions,
             savingOnly: false
         )
-        return VStack(alignment: .leading, spacing: 8) {
-            Text("日常预算")
-                .font(.title3.weight(.semibold))
-            if cards.isEmpty {
-                sectionEmptyHint("还没有日常预算分区，去「预算」页创建")
-            }
+        return Section("预算分区") {
             ForEach(cards) { card in
-                BudgetCategoryCardView(card: card) {
-                    detailCategory = categories.first { $0.categoryID == card.categoryID }
+                NavigationLink {
+                    if let category = categories.first(where: { $0.categoryID == card.categoryID }) {
+                        BudgetDetailView(category: category, month: selectedMonth)
+                    }
+                } label: {
+                    BudgetCategoryRowView(card: card)
                 }
             }
         }
@@ -175,12 +185,14 @@ struct HomeView: View {
         )
         return Group {
             if !cards.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("储蓄 · 不计入日常可花")
-                        .font(.title3.weight(.semibold))
+                Section("储蓄") {
                     ForEach(cards) { card in
-                        BudgetCategoryCardView(card: card) {
-                            detailCategory = categories.first { $0.categoryID == card.categoryID }
+                        NavigationLink {
+                            if let category = categories.first(where: { $0.categoryID == card.categoryID }) {
+                                BudgetDetailView(category: category, month: selectedMonth)
+                            }
+                        } label: {
+                            BudgetCategoryRowView(card: card)
                         }
                     }
                 }
@@ -189,61 +201,39 @@ struct HomeView: View {
     }
 
     private var recentSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("最近消费").font(.title3.weight(.semibold))
-                Spacer()
-                if !recentTransactions.isEmpty {
-                    Button("查看全部") { router.selectedTab = .transactions }
-                        .font(.subheadline)
+        Section {
+            if monthTransactions.isEmpty {
+                Text("本月还没有记录")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+            ForEach(Array(monthTransactions.prefix(5)), id: \.transactionID) { txn in
+                TransactionRowView(transaction: txn, categories: categories, accounts: accounts) {
+                    editing = txn
                 }
             }
-            if recentTransactions.isEmpty {
-                sectionEmptyHint("本月还没有记录，点上方「记一笔」开始")
-            } else {
-                VStack(spacing: 0) {
-                    let latest = Array(recentTransactions.prefix(5))
-                    ForEach(Array(latest.enumerated()), id: \.element.transactionID) { index, txn in
-                        TransactionRowView(transaction: txn, categories: categories) {
-                            editing = txn
-                        }
-                        if index < latest.count - 1 {
-                            Divider().padding(.leading, 52)
-                        }
-                    }
-                }
-                .background(Color(.secondarySystemGroupedBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+            Button {
+                router.selectedTab = .transactions
+            } label: {
+                Text("查看全部记录")
+                    .font(.subheadline)
             }
+            .foregroundStyle(.tint)
+        } header: {
+            Text("最近消费")
         }
     }
 
     private var emptyState: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "wallet.pass")
-                .font(.system(size: 44))
-                .foregroundStyle(Color.accentColor)
-            Text("开始分区预算")
-                .font(.title3.bold())
-            Text("把每个月的钱分到不同用途，\n随时看到每份还剩多少。")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-            Button("去创建预算分区") { router.selectedTab = .budget }
-                .buttonStyle(.borderedProminent)
-                .padding(.top, 4)
+        ContentUnavailableView {
+            Label("开始分区预算", systemImage: "wallet.pass")
+        } description: {
+            Text("把每个月的钱分到不同用途，随时看到每份还剩多少。")
+        } actions: {
+            Button("去创建预算分区") {
+                router.selectedTab = .budget
+            }
+            .buttonStyle(.borderedProminent)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 60)
-    }
-
-    private func sectionEmptyHint(_ text: String) -> some View {
-        Text(text)
-            .font(.footnote)
-            .foregroundStyle(.secondary)
-            .frame(maxWidth: .infinity, alignment: .center)
-            .padding(.vertical, 12)
-            .background(Color(.secondarySystemGroupedBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }

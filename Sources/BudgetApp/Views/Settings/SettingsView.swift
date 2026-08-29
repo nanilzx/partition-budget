@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 import UniformTypeIdentifiers
 
-/// 「我的」Tab：账户管理、自定义规则、Face ID、数据导出导入。
+/// 「我的」Tab：账户管理、自定义规则、数据导出导入。
 struct SettingsView: View {
     @Environment(\.modelContext) private var context
 
@@ -39,16 +39,6 @@ struct SettingsView: View {
                     comingSoonRow("AI 智能识别（后续批次）", systemImage: "sparkles")
                 } header: {
                     Text("智能分类")
-                }
-
-                Section {
-                    Toggle(isOn: faceIDBinding) {
-                        Label("启动时要求 Face ID", systemImage: "faceid")
-                    }
-                } header: {
-                    Text("安全")
-                } footer: {
-                    Text(faceIDFooter)
                 }
 
                 Section {
@@ -128,22 +118,6 @@ struct SettingsView: View {
                 Text(infoMessage ?? "")
             }
         }
-    }
-
-    // MARK: - Face ID
-
-    private var faceIDBinding: Binding<Bool> {
-        Binding(
-            get: { BiometricLock.shared.isEnabled },
-            set: { BiometricLock.shared.isEnabled = $0 }
-        )
-    }
-
-    private var faceIDFooter: String {
-        if BiometricLock.shared.isEnabled, !BiometricLock.shared.canAuthenticate {
-            return "当前设备未配置面容 ID 或锁屏密码，暂无法生效。请先在系统设置中配置。"
-        }
-        return "开启后，切到后台再回到 App 时需要验证面容 ID（或锁屏密码）才能查看。"
     }
 
     // MARK: - 导出 / 导入

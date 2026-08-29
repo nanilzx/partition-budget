@@ -2,8 +2,10 @@ import SwiftUI
 import SwiftData
 
 /// 记录 Tab：全部收支、搜索、筛选、编辑、删除。
+/// 交互全部走 iOS 原生习惯：searchable / swipeActions / contextMenu。
 struct TransactionsView: View {
     @Environment(\.modelContext) private var context
+    @Environment(AppRouter.self) private var router
 
     @Query(sort: [SortDescriptor(\Transaction.date, order: .reverse)])
     private var allTransactions: [Transaction]
@@ -19,8 +21,17 @@ struct TransactionsView: View {
     @State private var selectedMonth = BudgetMonth.current
     @State private var filter = TransactionFilter()
     @State private var showingFilter = false
+    @State private var showingAddSheet = false
     @State private var editing: Transaction?
     @State private var pendingDelete: Transaction?
+    @State private var quickCategoryTarget: Transaction?
+
+    private var hasActiveConditions: Bool {
+        !searchText.trimmingCharacters(in: .whitespaces).isEmpty
+            || filter.hasActiveFilters
+            || scopeAll
+            || selectedMonth != BudgetMonth.current
+    }
 
     private var filtered: [Transaction] {
         var result = scopeAll
@@ -59,44 +70,31 @@ struct TransactionsView: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                scopeSection
-                Section {
-                    ForEach(filtered) { txn in
-                        TransactionRowView(transaction: txn, categories: categories, accounts: accounts) {
-                            editing = txn
+            Group {
+                if filtered.isEmpty && !hasActiveConditions {
+                    ContentUnavailableView {
+                        Label("暂无消费记录", systemImage: "list.bullet")
+                    } description: {
+                        Text("记录第一笔消费后，会显示在这里。")
+                    } actions: {
+                        Button("记一笔") {
+                            showingAddSheet = true
                         }
-                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                            Button(role: .destructive) {
-                                pendingDelete = txn
-                            } label: {
-                                Label("删除", systemImage: "trash")
-                            }
-                        }
+                        .buttonStyle(.borderedProminent)
                     }
-                } header: {
-                    HStack {
-                        Text("共 \(filtered.count) 笔")
-                        Spacer()
-                        Text("支出 \(Money(cents: totalExpenseCents).displayText)")
-                        Text("收入 \(Money(cents: totalIncomeCents).displayText)")
-                            .foregroundStyle(.green)
-                    }
-                    .font(.caption)
-                    .textCase(nil)
-                }
-                if filtered.isEmpty {
-                    Section {
-                        Text("没有符合条件的记录")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
+                } else {
+                    listContent
                 }
             }
-            .listStyle(.insetGrouped)
-            .searchable(text: $searchText, prompt: "搜索 麦当劳 / Steam / 备注…")
             .navigationTitle("记录")
             .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        showingAddSheet = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
                         showingFilter = true
@@ -109,11 +107,18 @@ struct TransactionsView: View {
                     }
                 }
             }
+            .searchable(text: $searchText, prompt: "搜索 麦当劳 / Steam / 备注…")
             .sheet(isPresented: $showingFilter) {
                 TransactionFilterSheet(filter: $filter)
             }
+            .sheet(isPresented: $showingAddSheet) {
+                AddTransactionSheet()
+            }
             .sheet(item: $editing) { txn in
                 AddTransactionSheet(editingTransaction: txn)
+            }
+            .sheet(item: $quickCategoryTarget) { txn in
+                QuickCategorySheet(transaction: txn)
             }
             .confirmationDialog(
                 "删除这笔记录？",
@@ -126,6 +131,7 @@ struct TransactionsView: View {
                 Button("删除", role: .destructive) {
                     if let txn = pendingDelete {
                         try? TransactionService(context: context).delete(txn)
+                        DS.Haptic.destructive()
                     }
                 }
                 Button("取消", role: .cancel) {}
@@ -135,7 +141,70 @@ struct TransactionsView: View {
         }
     }
 
-    // MARK: - 子视图
+    // MARK: - 列表
+
+    private var listContent: some View {
+        List {
+            scopeSection
+            Section {
+                ForEach(filtered) { txn in
+                    TransactionRowView(transaction: txn, categories: categories, accounts: accounts) {
+                        editing = txn
+                    }
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        Button(role: .destructive) {
+                            pendingDelete = txn
+                        } label: {
+                            Label("删除", systemImage: "trash")
+                        }
+                    }
+                    .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                        Button {
+                            quickCategoryTarget = txn
+                        } label: {
+                            Label("分类", systemImage: "tag")
+                        }
+                        .tint(.indigo)
+                    }
+                    .contextMenu {
+                        Button {
+                            editing = txn
+                        } label: {
+                            Label("编辑", systemImage: "pencil")
+                        }
+                        Button {
+                            quickCategoryTarget = txn
+                        } label: {
+                            Label("修改分类", systemImage: "tag")
+                        }
+                        Button(role: .destructive) {
+                            pendingDelete = txn
+                        } label: {
+                            Label("删除", systemImage: "trash")
+                        }
+                    }
+                }
+            } header: {
+                HStack {
+                    Text("共 \(filtered.count) 笔")
+                    Spacer()
+                    Text("支出 \(Money(cents: totalExpenseCents).displayText)")
+                    Text("收入 \(Money(cents: totalIncomeCents).displayText)")
+                        .foregroundStyle(.green)
+                }
+                .font(.caption)
+                .textCase(nil)
+            }
+            if filtered.isEmpty {
+                Section {
+                    Text("没有符合条件的记录")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .listStyle(.insetGrouped)
+    }
 
     private var scopeSection: some View {
         Section {
@@ -176,5 +245,60 @@ struct TransactionsView: View {
         }
         .textCase(nil)
         .listRowBackground(Color.clear)
+    }
+}
+
+/// 右滑快速修改分类（规格第十七节）。
+private struct QuickCategorySheet: View {
+    let transaction: Transaction
+
+    @Environment(\.modelContext) private var context
+    @Environment(\.dismiss) private var dismiss
+
+    @Query(sort: [SortDescriptor(\BudgetCategory.sortOrder), SortDescriptor(\BudgetCategory.createdAt)])
+    private var categories: [BudgetCategory]
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    ForEach(categories.filter { !$0.isHidden }) { category in
+                        Button {
+                            try? TransactionService(context: context).update(
+                                transaction,
+                                categoryID: category.categoryID
+                            )
+                            DS.Haptic.success()
+                            dismiss()
+                        } label: {
+                            HStack(spacing: 10) {
+                                Image(systemName: category.icon)
+                                    .font(.footnote)
+                                    .foregroundStyle(Color(hex: category.colorHex))
+                                    .frame(width: 24)
+                                Text(category.name)
+                                    .foregroundStyle(.primary)
+                                Spacer()
+                                if transaction.categoryID == category.categoryID {
+                                    Image(systemName: "checkmark")
+                                        .font(.footnote.weight(.semibold))
+                                        .foregroundStyle(.tint)
+                                }
+                            }
+                        }
+                    }
+                } footer: {
+                    Text("改为其他分类后，两边的预算会立即重算，并记住你的偏好。")
+                }
+            }
+            .navigationTitle("修改分类")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("取消") { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.medium])
     }
 }

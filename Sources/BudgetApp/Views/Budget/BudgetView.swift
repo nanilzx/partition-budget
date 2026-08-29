@@ -133,9 +133,26 @@ struct BudgetView: View {
 
     private var categorySection: some View {
         Section {
-            ForEach(categories) { category in
-                categoryRow(category)
-            }
+                ForEach(categories) { category in
+                    categoryRow(category)
+                        .contextMenu {
+                            Button {
+                                editingCategory = category
+                            } label: {
+                                Label("编辑", systemImage: "pencil")
+                            }
+                            Button {
+                                try? BudgetService(context: context).setCategoryHidden(category, hidden: !category.isHidden)
+                            } label: {
+                                Label(category.isHidden ? "显示" : "隐藏", systemImage: category.isHidden ? "eye" : "eye.slash")
+                            }
+                            Button(role: .destructive) {
+                                requestDelete(category)
+                            } label: {
+                                Label("删除", systemImage: "trash")
+                            }
+                        }
+                }
             .onMove(perform: moveCategories)
         } header: {
             Text("预算分区")

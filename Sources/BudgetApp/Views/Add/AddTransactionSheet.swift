@@ -1,8 +1,8 @@
 import SwiftUI
 import SwiftData
 
-/// 「记一笔」：新增与编辑共用。最少只需金额 + 描述，分类由推荐预选。
-/// 传入 capture 时为「截图/短信识别的待确认入账」模式。
+/// 「记一笔」：新增与编辑共用，最少只需金额 + 描述。
+/// 金额是整个 Sheet 的视觉核心（参考 Apple Pay 的大数字输入），底部一键确认。
 struct AddTransactionSheet: View {
     var editingTransaction: Transaction? = nil
     var capture: CapturePrefill? = nil
@@ -18,6 +18,8 @@ struct AddTransactionSheet: View {
 
     @State private var model = AddTransactionModel()
     @State private var saveError: String?
+    @State private var showingCategoryPicker = false
+    @FocusState private var amountFocused: Bool
 
     private var visibleCategories: [BudgetCategory] {
         allCategories.filter {
@@ -29,6 +31,16 @@ struct AddTransactionSheet: View {
         if editingTransaction != nil { return "编辑记录" }
         if capture != nil { return "确认消费" }
         return "记一笔"
+    }
+
+    private var confirmTitle: String {
+        if editingTransaction != nil { return "保存修改" }
+        if capture != nil { return "确认入账" }
+        return model.isIncome ? "确认收入" : "确认记录"
+    }
+
+    private var selectedCategory: BudgetCategory? {
+        allCategories.first { $0.categoryID == model.selectedCategoryID }
     }
 
     var body: some View {
@@ -64,6 +76,18 @@ struct AddTransactionSheet: View {
                 Section("备注（可选）") {
                     TextField("备注", text: $model.note, axis: .vertical)
                 }
+                Section {
+                    Button {
+                        attemptSave()
+                    } label: {
+                        Text(confirmTitle)
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
+                    }
+                    .disabled(!model.canSave)
+                    .listRowBackground(Color.accentColor)
+                }
+                .listRowInsets(EdgeInsets())
             }
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
@@ -71,23 +95,36 @@ struct AddTransactionSheet: View {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("取消") { dismiss() }
                 }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("保存") { attemptSave() }
-                        .disabled(!model.canSave)
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("完成") { amountFocused = false }
                 }
             }
             .onAppear {
                 if let capture {
                     model.load(capture: capture)
                     model.suggestCategory(context: context)
+                    amountFocused = true
+                } else if editingTransaction == nil {
+                    amountFocused = true
                 } else {
                     model.load(editingTransaction: editingTransaction)
                 }
+            }
+            .sheet(isPresented: $showingCategoryPicker) {
+                CategoryPickerSheet(
+                    selection: $model.selectedCategoryID,
+                    month: BudgetMonth(date: model.date)
+                ) {
+                    model.suggestCategory(context: context)
+                }
+                .presentationDetents([.medium, .large])
             }
             .confirmationDialog(overBudgetTitle, isPresented: $model.showOverBudgetDialog, titleVisibility: .visible) {
                 Button("仍然记录（余额将为负）") {
                     do {
                         try model.save(context: context)
+                        DS.Haptic.success()
                         dismiss()
                     } catch {
                         saveError = error.localizedDescription
@@ -99,6 +136,7 @@ struct AddTransactionSheet: View {
                 Button("增加本月预算") {
                     do {
                         try model.saveWithBudgetBoost(context: context)
+                        DS.Haptic.success()
                         dismiss()
                     } catch {
                         saveError = error.localizedDescription
@@ -117,6 +155,7 @@ struct AddTransactionSheet: View {
                 ) {
                     do {
                         try model.save(context: context)
+                        DS.Haptic.success()
                         dismiss()
                     } catch {
                         saveError = error.localizedDescription
@@ -139,16 +178,20 @@ struct AddTransactionSheet: View {
 
     // MARK: - 分区
 
+    /// 金额输入：整个 Sheet 的视觉核心。
     private var amountSection: some View {
         Section {
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text("¥")
-                    .font(.title2)
+                    .font(.title2.weight(.medium))
                     .foregroundStyle(.secondary)
-                TextField("0.00", text: $model.amountString)
+                TextField("0", text: $model.amountString)
                     .keyboardType(.decimalPad)
-                    .font(.system(size: 32, weight: .semibold, design: .rounded))
+                    .font(.system(size: 44, weight: .bold, design: .rounded))
+                    .focused($amountFocused)
+                    .autocorrectionDisabled()
             }
+            .padding(.vertical, 2)
         }
     }
 
@@ -161,11 +204,11 @@ struct AddTransactionSheet: View {
 
     private var expenseSection: some View {
         Section("消费信息") {
-            TextField("消费内容（如：麦当劳午饭）", text: $model.merchantText)
+            TextField("消费描述（如：麦当劳）", text: $model.merchantText)
                 .onChange(of: model.merchantText) { _, _ in
                     model.suggestCategory(context: context)
                 }
-            categoryPicker
+            categoryRow
             if let suggestion = model.suggestion {
                 HStack(spacing: 6) {
                     Image(systemName: suggestion.isLowConfidence ? "questionmark.circle" : "sparkles")
@@ -182,40 +225,34 @@ struct AddTransactionSheet: View {
         }
     }
 
-    private var categoryPicker: some View {
-        LazyVGrid(
-            columns: [GridItem(.adaptive(minimum: 84), spacing: 8)],
-            spacing: 8
-        ) {
-            ForEach(visibleCategories) { category in
-                categoryChip(category)
-            }
-        }
-        .padding(.vertical, 4)
-    }
-
-    private func categoryChip(_ category: BudgetCategory) -> some View {
-        let selected = model.selectedCategoryID == category.categoryID
-        return Button {
-            model.selectCategory(category, context: context)
+    /// 分类行：原生行样式，点开轻量选择器（图标/名称/剩余预算）。
+    private var categoryRow: some View {
+        Button {
+            showingCategoryPicker = true
+            DS.Haptic.tap()
         } label: {
-            HStack(spacing: 4) {
-                Image(systemName: category.icon)
-                    .font(.caption)
-                Text(category.name)
-                    .font(.caption)
-                    .lineLimit(1)
+            HStack(spacing: 10) {
+                if let category = selectedCategory {
+                    Image(systemName: category.icon)
+                        .font(.footnote)
+                        .foregroundStyle(Color(hex: category.colorHex))
+                        .frame(width: 24)
+                    Text(category.name)
+                        .foregroundStyle(.primary)
+                } else {
+                    Image(systemName: "square.grid.2x2")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .frame(width: 24)
+                    Text("选择分区")
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
             }
-            .padding(.vertical, 7)
-            .padding(.horizontal, 10)
-            .frame(maxWidth: .infinity)
-            .background(
-                selected ? Color(hex: category.colorHex) : Color(hex: category.colorHex).opacity(0.12)
-            )
-            .foregroundStyle(selected ? Color.white : Color(hex: category.colorHex))
-            .clipShape(Capsule())
         }
-        .buttonStyle(.plain)
     }
 
     // MARK: - 超支确认
@@ -233,11 +270,99 @@ struct AddTransactionSheet: View {
     private func attemptSave() {
         do {
             let dialogShown = try model.validate(context: context)
-            if dialogShown { return }
+            if dialogShown {
+                DS.Haptic.warning()
+                return
+            }
             try model.save(context: context)
+            DS.Haptic.success()
             dismiss()
         } catch {
             saveError = error.localizedDescription
+        }
+    }
+}
+
+/// 轻量分类选择器：图标 + 名称 + 剩余预算（规格第七节）。
+struct CategoryPickerSheet: View {
+    @Binding var selection: UUID?
+    let month: BudgetMonth
+    var onPicked: () -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    @Query(sort: [SortDescriptor(\BudgetCategory.sortOrder), SortDescriptor(\BudgetCategory.createdAt)])
+    private var categories: [BudgetCategory]
+
+    @Query private var items: [MonthlyBudgetItem]
+
+    @Query(sort: [SortDescriptor(\Transaction.date, order: .reverse)])
+    private var allTransactions: [Transaction]
+
+    private var visibleCategories: [BudgetCategory] {
+        categories.filter { !$0.isHidden || $0.categoryID == selection }
+    }
+
+    private func remainingCents(of category: BudgetCategory) -> Int64? {
+        guard let item = items.first(where: {
+            $0.categoryID == category.categoryID
+                && $0.year == month.year
+                && $0.month == month.month
+        }) else { return nil }
+        let spent = allTransactions
+            .filter {
+                $0.type == .expense
+                    && $0.categoryID == category.categoryID
+                    && $0.year == month.year
+                    && $0.month == month.month
+            }
+            .reduce(Int64(0)) { $0 + $1.cents }
+        return item.adjustedCents - spent
+    }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    ForEach(visibleCategories) { category in
+                        Button {
+                            selection = category.categoryID
+                            DS.Haptic.tap()
+                            onPicked()
+                            dismiss()
+                        } label: {
+                            HStack(spacing: 10) {
+                                Image(systemName: category.icon)
+                                    .font(.footnote)
+                                    .foregroundStyle(Color(hex: category.colorHex))
+                                    .frame(width: 24)
+                                Text(category.name)
+                                    .foregroundStyle(.primary)
+                                Spacer()
+                                if let remaining = remainingCents(of: category) {
+                                    Text("剩 \(Money(cents: remaining).displayText)")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                if selection == category.categoryID {
+                                    Image(systemName: "checkmark")
+                                        .font(.footnote.weight(.semibold))
+                                        .foregroundStyle(.tint)
+                                }
+                            }
+                        }
+                    }
+                } footer: {
+                    Text("选择后自动扣除该分区的预算。")
+                }
+            }
+            .navigationTitle("选择分区")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("取消") { dismiss() }
+                }
+            }
         }
     }
 }
