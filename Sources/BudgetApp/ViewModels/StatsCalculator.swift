@@ -25,7 +25,7 @@ enum StatsCalculator {
         comps.year = month.year
         comps.month = month.month
         guard let start = calendar.date(from: comps),
-              let interval = calendar.dateInterval(of: .day, for: start) else {
+              let interval = calendar.dateInterval(of: .month, for: start) else {
             return 30
         }
         return calendar.dateComponents([.day], from: interval.start, to: interval.end).day ?? 30
