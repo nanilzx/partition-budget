@@ -11,6 +11,9 @@ struct TransactionsView: View {
     @Query(sort: [SortDescriptor(\BudgetCategory.sortOrder), SortDescriptor(\BudgetCategory.createdAt)])
     private var categories: [BudgetCategory]
 
+    @Query(sort: [SortDescriptor(\Account.sortOrder), SortDescriptor(\Account.createdAt)])
+    private var accounts: [Account]
+
     @State private var searchText = ""
     @State private var scopeAll = false
     @State private var selectedMonth = BudgetMonth.current
@@ -60,7 +63,7 @@ struct TransactionsView: View {
                 scopeSection
                 Section {
                     ForEach(filtered) { txn in
-                        TransactionRowView(transaction: txn, categories: categories) {
+                        TransactionRowView(transaction: txn, categories: categories, accounts: accounts) {
                             editing = txn
                         }
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {

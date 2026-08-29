@@ -14,6 +14,8 @@ struct PartitionBudgetApp: App {
                 MonthlyBudgetItem.self,
                 BudgetTransfer.self,
                 BudgetAdjustment.self,
+                ClassificationRule.self,
+                Account.self,
             ])
             container = try ModelContainer(for: schema, configurations: [ModelConfiguration()])
         } catch {

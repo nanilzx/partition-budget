@@ -12,10 +12,9 @@ struct ClassificationResult {
 }
 
 /// 消费分类推荐。
-/// 优先级（规格第五/六节）：用户自定义规则（第二批）> 历史消费记录 > 内置词库。
-/// 用户在历史里纠正过的分类会通过「历史记录」层自动生效——
-/// 例如把 Steam 从购物改到娱乐后，之后输入 "Steam Games" 也会推荐娱乐。
-/// 第二批接入用户规则与 AI Provider 时，在此方法内部按优先级插入即可，UI 无需改动。
+/// 优先级（规格第五/六节）：用户自定义规则 > 历史消费记录 > 内置词库。
+/// 用户纠正（手动改分区）会自动生成自定义规则，之后同样内容固定推荐到纠正后的分区。
+/// 第二批接入 AI Provider 时，在此方法内部按优先级插入即可，UI 无需改动。
 struct ClassificationService {
     let context: ModelContext
 
@@ -23,11 +22,61 @@ struct ClassificationService {
         let query = normalized(text)
         guard !query.isEmpty else { return nil }
 
+        if let fromRules = suggestFromUserRules(query: query, categories: categories) {
+            return fromRules
+        }
         if let fromHistory = suggestFromHistory(query: query, categories: categories) {
             return fromHistory
         }
         if let fromBuiltin = suggestFromBuiltinRules(query: query, categories: categories) {
             return fromBuiltin
+        }
+        return nil
+    }
+
+    // MARK: - 用户自定义规则（最高优先级）
+
+    func allRules() throws -> [ClassificationRule] {
+        try ClassificationRule.all(in: context)
+    }
+
+    /// 同一关键词只保留一条规则，重复添加即覆盖。
+    @discardableResult
+    func upsertRule(keyword: String, categoryID: UUID) throws -> ClassificationRule? {
+        let key = normalized(keyword)
+        guard key.count >= 2 else { return nil }
+        if let existing = try allRules().first(where: { $0.keyword == key }) {
+            existing.categoryID = categoryID
+            existing.createdAt = Date()
+            try context.save()
+            return existing
+        }
+        let rule = ClassificationRule(keyword: key, categoryID: categoryID)
+        context.insert(rule)
+        try context.save()
+        return rule
+    }
+
+    func deleteRule(_ rule: ClassificationRule) throws {
+        context.delete(rule)
+        try context.save()
+    }
+
+    private func suggestFromUserRules(query: String, categories: [BudgetCategory]) -> ClassificationResult? {
+        guard let rules = try? allRules() else { return nil }
+        for rule in rules {
+            let keyword = rule.keyword
+            guard keyword.count >= 2,
+                  query.contains(keyword) || keyword.contains(query) else { continue }
+            guard let category = categories.first(where: { $0.categoryID == rule.categoryID }) else {
+                continue
+            }
+            return ClassificationResult(
+                categoryID: category.categoryID,
+                categoryName: category.name,
+                source: .userRule,
+                confidence: 0.95
+            )
         }
         return nil
     }

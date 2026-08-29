@@ -3,6 +3,7 @@ import SwiftUI
 /// 首页顶部汇总卡：突出「本月还可以花」。
 struct OverviewHeaderView: View {
     let summary: HomeSummary
+    var netWorthCents: Int64? = nil
     var onAllocateTapped: () -> Void = {}
 
     var body: some View {
@@ -32,6 +33,15 @@ struct OverviewHeaderView: View {
                     }
                 }
                 .buttonStyle(.plain)
+            }
+            if let netWorthCents {
+                HStack(spacing: 6) {
+                    Image(systemName: "creditcard")
+                        .font(.caption2)
+                    Text("实际资产 \(Money(cents: netWorthCents).displayText)（与预算分开统计，账户管理在「我的」）")
+                        .font(.caption2)
+                }
+                .foregroundStyle(.secondary)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

@@ -5,10 +5,16 @@ import SwiftData
 struct TransactionRowView: View {
     let transaction: Transaction
     let categories: [BudgetCategory]
+    var accounts: [Account] = []
     var onTap: (() -> Void)? = nil
 
     private var category: BudgetCategory? {
         categories.first { $0.categoryID == transaction.categoryID }
+    }
+
+    private var accountName: String? {
+        guard let id = transaction.accountID else { return nil }
+        return accounts.first { $0.accountID == id }?.name
     }
 
     private var displayTitle: String {
@@ -34,11 +40,16 @@ struct TransactionRowView: View {
                     .font(.body)
                 HStack(spacing: 4) {
                     Text(categoryLabel)
+                    if let accountName {
+                        Text("·")
+                        Text(accountName)
+                    }
                     Text("·")
                     Text(AppFormat.transactionDateText(transaction.date))
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                .lineLimit(1)
             }
             Spacer()
             Text(amountText)

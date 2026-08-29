@@ -12,6 +12,7 @@ final class AddTransactionModel {
     var note = ""
     var date = Date()
     var selectedCategoryID: UUID?
+    var selectedAccountID: UUID?
     var suggestion: ClassificationResult?
     var showOverBudgetDialog = false
     var showTransferFix = false
@@ -46,6 +47,7 @@ final class AddTransactionModel {
         note = txn.note
         date = txn.date
         selectedCategoryID = txn.categoryID
+        selectedAccountID = txn.accountID
         userPickedCategory = true
     }
 
@@ -58,12 +60,22 @@ final class AddTransactionModel {
         note = ""
         date = capture.date
         selectedCategoryID = nil
+        selectedAccountID = nil
         userPickedCategory = false
     }
 
-    func selectCategory(_ category: BudgetCategory) {
+    func selectCategory(_ category: BudgetCategory, context: ModelContext) {
         selectedCategoryID = category.categoryID
         userPickedCategory = true
+        // 用户推翻了推荐 = 一次纠正：生成/覆盖自定义规则（规格第六节）
+        if let suggestion,
+           suggestion.categoryID != category.categoryID,
+           merchantText.trimmingCharacters(in: .whitespacesAndNewlines).count >= 2 {
+            try? ClassificationService(context: context).upsertRule(
+                keyword: merchantText,
+                categoryID: category.categoryID
+            )
+        }
         suggestion = nil
     }
 
@@ -122,6 +134,7 @@ final class AddTransactionModel {
                 description: description,
                 note: note,
                 categoryID: isIncome ? nil : selectedCategoryID,
+                accountID: .some(selectedAccountID),
                 date: date
             )
         } else if isIncome {
@@ -129,7 +142,8 @@ final class AddTransactionModel {
                 cents: cents,
                 description: description.isEmpty ? "收入" : description,
                 note: note,
-                date: date
+                date: date,
+                accountID: selectedAccountID
             )
         } else if let cid = selectedCategoryID {
             try service.addExpense(
@@ -138,6 +152,7 @@ final class AddTransactionModel {
                 note: note,
                 categoryID: cid,
                 date: date,
+                accountID: selectedAccountID,
                 classificationSource: suggestion?.source ?? .manual,
                 confidence: suggestion?.confidence ?? 1.0
             )

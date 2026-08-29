@@ -13,6 +13,9 @@ struct AddTransactionSheet: View {
     @Query(sort: [SortDescriptor(\BudgetCategory.sortOrder), SortDescriptor(\BudgetCategory.createdAt)])
     private var allCategories: [BudgetCategory]
 
+    @Query(sort: [SortDescriptor(\Account.sortOrder), SortDescriptor(\Account.createdAt)])
+    private var accounts: [Account]
+
     @State private var model = AddTransactionModel()
     @State private var saveError: String?
 
@@ -47,6 +50,16 @@ struct AddTransactionSheet: View {
                     incomeSection
                 } else {
                     expenseSection
+                }
+                if !accounts.isEmpty {
+                    Section("资金账户（可选）") {
+                        Picker("支付账户", selection: $model.selectedAccountID) {
+                            Text("不关联").tag(UUID?.none)
+                            ForEach(accounts) { account in
+                                Text(account.name).tag(Optional(account.accountID))
+                            }
+                        }
+                    }
                 }
                 Section("备注（可选）") {
                     TextField("备注", text: $model.note, axis: .vertical)
@@ -184,7 +197,7 @@ struct AddTransactionSheet: View {
     private func categoryChip(_ category: BudgetCategory) -> some View {
         let selected = model.selectedCategoryID == category.categoryID
         return Button {
-            model.selectCategory(category)
+            model.selectCategory(category, context: context)
         } label: {
             HStack(spacing: 4) {
                 Image(systemName: category.icon)

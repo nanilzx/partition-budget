@@ -9,6 +9,7 @@ enum ServiceError: LocalizedError {
     case categoryInUse(Int)
     case transferSameCategory
     case transferExceedsRemaining
+    case invalidBackupFile
 
     var errorDescription: String? {
         switch self {
@@ -26,6 +27,8 @@ enum ServiceError: LocalizedError {
             return "不能在同一个分区之间转移"
         case .transferExceedsRemaining:
             return "转移金额超过来源分区的剩余额度"
+        case .invalidBackupFile:
+            return "备份文件格式不正确，无法导入"
         }
     }
 }

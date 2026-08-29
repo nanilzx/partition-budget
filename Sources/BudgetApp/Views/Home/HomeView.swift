@@ -16,6 +16,9 @@ struct HomeView: View {
 
     @Query private var monthlyBudgets: [MonthlyBudget]
 
+    @Query(sort: [SortDescriptor(\Account.sortOrder), SortDescriptor(\Account.createdAt)])
+    private var accounts: [Account]
+
     @State private var selectedMonth = BudgetMonth.current
     @State private var showingAddSheet = false
     @State private var showingAllocation = false
@@ -45,6 +48,20 @@ struct HomeView: View {
 
     private var recentTransactions: [Transaction] { monthTransactions }
 
+    /// 实际资产（规格第十一节）：与预算分开统计，只计「计入总资产」的账户。
+    private var netWorthCents: Int64? {
+        guard !accounts.isEmpty else { return nil }
+        var deltas: [UUID: Int64] = [:]
+        for txn in allTransactions {
+            guard let id = txn.accountID else { continue }
+            deltas[id, default: 0] += (txn.type == .income ? txn.cents : -txn.cents)
+        }
+        let total = accounts
+            .filter(\.includeInNetWorth)
+            .reduce(Int64(0)) { $0 + $1.openingBalanceCents + (deltas[$1.accountID] ?? 0) }
+        return total
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -53,7 +70,7 @@ struct HomeView: View {
                     if categories.isEmpty {
                         emptyState
                     } else {
-                        OverviewHeaderView(summary: summary) { showingAllocation = true }
+                        OverviewHeaderView(summary: summary, netWorthCents: netWorthCents) { showingAllocation = true }
                         addTransactionButton
                         dailySection
                         savingSection

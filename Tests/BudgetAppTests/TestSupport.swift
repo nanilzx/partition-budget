@@ -9,6 +9,8 @@ class ServiceTestCase: XCTestCase {
     var months: MonthlyBudgetService!
     var budgets: BudgetService!
     var transactions: TransactionService!
+    var accounts: AccountService!
+    var classification: ClassificationService!
 
     let m = BudgetMonth(year: 2026, month: 8)
     let sep = BudgetMonth(year: 2026, month: 9)
@@ -21,6 +23,8 @@ class ServiceTestCase: XCTestCase {
             MonthlyBudgetItem.self,
             BudgetTransfer.self,
             BudgetAdjustment.self,
+            ClassificationRule.self,
+            Account.self,
         ])
         container = try ModelContainer(
             for: schema,
@@ -31,6 +35,8 @@ class ServiceTestCase: XCTestCase {
         months = MonthlyBudgetService(context: context)
         budgets = BudgetService(context: context)
         transactions = TransactionService(context: context)
+        accounts = AccountService(context: context)
+        classification = ClassificationService(context: context)
     }
 
     override func tearDown() {
@@ -39,6 +45,8 @@ class ServiceTestCase: XCTestCase {
         months = nil
         budgets = nil
         transactions = nil
+        accounts = nil
+        classification = nil
     }
 
     func makeCategory(
