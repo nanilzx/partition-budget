@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>分区预算 — 界面预览</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-font-smoothing:antialiased; }
+  body { background:#17171c; font-family:-apple-system,"SF Pro Text","PingFang SC","Microsoft YaHei",sans-serif; padding:42px 34px; color:#fff; }
+  h1 { font-size:24px; margin-bottom:8px; font-weight:700; }
+  .sub { color:#9a9aa5; font-size:13px; margin-bottom:24px; }
+  .note { background:#222229; border:1px solid #34343e; color:#c9c9d4; font-size:13px; line-height:1.8; padding:14px 18px; border-radius:12px; margin-bottom:38px; max-width:1320px; }
+  .note b { color:#fff; }
+  .grid { display:flex; flex-wrap:wrap; gap:40px; align-items:flex-start; }
+  .shot .label { font-size:14px; color:#e8e8ee; margin:0 0 12px 8px; font-weight:600; }
+  .phone { width:390px; height:844px; background:#F2F2F7; border-radius:54px; border:12px solid #0b0b0e; box-shadow:0 0 0 2px #2e2e38, 0 30px 70px rgba(0,0,0,.6); overflow:hidden; position:relative; color:#000; }
+  .island { position:absolute; top:11px; left:50%; transform:translateX(-50%); width:118px; height:32px; background:#0b0b0e; border-radius:18px; z-index:60; }
+  .statusbar { height:52px; display:flex; justify-content:space-between; align-items:flex-end; padding:0 32px 6px; font-size:15px; font-weight:600; position:relative; z-index:40; }
+  .statusbar .right { display:flex; gap:6px; align-items:center; font-size:12px; }
+  .homebar { position:absolute; bottom:8px; left:50%; transform:translateX(-50%); width:134px; height:5px; background:#000; opacity:.9; border-radius:3px; z-index:60; }
+  .content { position:absolute; top:52px; bottom:0; left:0; right:0; display:flex; flex-direction:column; }
+  .navbar { display:flex; align-items:center; justify-content:space-between; padding:4px 16px 8px; font-size:17px; font-weight:600; }
+  .navbtn { color:#3B82F6; font-size:17px; font-weight:400; display:flex; align-items:center; gap:4px; }
+  .navbtn svg { display:block; }
+  .scroll { flex:1; overflow:hidden; padding:2px 16px 12px; display:flex; flex-direction:column; gap:14px; position:relative; }
+  .scroll .fade { position:absolute; left:0; right:0; bottom:0; height:90px; background:linear-gradient(to bottom, rgba(242,242,247,0), rgba(242,242,247,.95)); pointer-events:none; }
+  .tabbar { background:rgba(249,249,251,.96); border-top:.5px solid #c9c9cd; display:flex; padding:7px 0 26px; }
+  .tab { flex:1; text-align:center; font-size:10px; color:#93939b; display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .tab.active { color:#3B82F6; }
+  .tab svg { display:block; }
+
+  /* 首页 */
+  .monthnav { display:flex; align-items:center; justify-content:space-between; }
+  .mbtn { width:34px; height:34px; border-radius:50%; background:#fff; display:flex; align-items:center; justify-content:center; color:#3B82F6; box-shadow:0 1px 3px rgba(0,0,0,.06); }
+  .mtitle { font-size:16px; font-weight:600; }
+  .overview { border-radius:16px; padding:16px; background:linear-gradient(135deg, rgba(59,130,246,.16), rgba(59,130,246,.05)); }
+  .overview .cap { font-size:13px; color:#6C6C70; }
+  .overview .big { font-size:40px; font-weight:800; letter-spacing:-.5px; font-variant-numeric:tabular-nums; margin:2px 0 12px; }
+  .stats { display:flex; gap:26px; }
+  .stat .k { font-size:12px; color:#6C6C70; }
+  .stat .v { font-size:14px; font-weight:600; margin-top:2px; font-variant-numeric:tabular-nums; }
+  .stat .go { font-size:11px; color:#3B82F6; margin-top:2px; }
+  .addbtn { background:#3B82F6; color:#fff; border-radius:12px; text-align:center; font-size:16px; font-weight:600; padding:13px 0; }
+  .sectitle { font-size:20px; font-weight:700; }
+  .card { background:#fff; border-radius:12px; padding:12px; }
+  .card .top { display:flex; align-items:center; gap:10px; }
+  .cicon { width:36px; height:36px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:17px; }
+  .card .cname { font-size:15px; font-weight:500; }
+  .card .cstate { font-size:11px; margin-top:1px; }
+  .card .right { margin-left:auto; text-align:right; }
+  .card .rem { font-size:15px; font-weight:600; font-variant-numeric:tabular-nums; }
+  .card .bud { font-size:11px; color:#8E8E93; margin-top:1px; font-variant-numeric:tabular-nums; }
+  .track { height:6px; border-radius:3px; background:rgba(120,120,128,.16); margin:10px 0 7px; overflow:hidden; }
+  .fill { height:100%; border-radius:3px; }
+  .card .bottom { display:flex; justify-content:space-between; font-size:11px; color:#8E8E93; font-variant-numeric:tabular-nums; }
+
+  /* 表单页（记一笔） */
+  .sheet { position:absolute; left:0; right:0; bottom:0; top:14px; background:#F2F2F7; border-radius:14px 14px 0 0; display:flex; flex-direction:column; }
+  .grab { width:38px; height:5px; border-radius:3px; background:#c9c9cd; margin:7px auto 0; }
+  .formnav { display:flex; justify-content:space-between; align-items:center; padding:8px 16px; font-size:17px; }
+  .formnav .t { font-weight:600; font-size:17px; }
+  .seg { display:flex; background:#E3E3E8; border-radius:9px; padding:2px; margin:0 16px; }
+  .seg div { flex:1; text-align:center; font-size:13px; font-weight:500; padding:6px 0; border-radius:7px; color:#000; }
+  .seg .on { background:#fff; box-shadow:0 1px 4px rgba(0,0,0,.12); font-weight:600; }
+  .group { background:#fff; border-radius:10px; margin:14px 16px 0; }
+  .row { display:flex; align-items:center; padding:11px 16px; font-size:16px; gap:8px; }
+  .row + .row { border-top:.5px solid #E5E5EA; }
+  .row .lab { color:#000; }
+  .row .val { margin-left:auto; color:#8E8E93; }
+  .amount { display:flex; align-items:baseline; gap:6px; padding:14px 16px; }
+  .amount .cur { font-size:22px; color:#8E8E93; }
+  .amount .num { font-size:34px; font-weight:600; letter-spacing:-.5px; font-variant-numeric:tabular-nums; }
+  .amount .ph { font-size:34px; font-weight:600; color:#C7C7CC; }
+  .input-ph { color:#C7C7CC; }
+  .chips { display:flex; flex-wrap:wrap; gap:8px; padding:10px 16px 14px; }
+  .chip { display:flex; align-items:center; gap:4px; font-size:12px; padding:7px 12px; border-radius:999px; }
+  .hint { display:flex; gap:6px; align-items:center; font-size:12px; color:#8E8E93; padding:0 16px 12px; }
+  .footer-ph { font-size:13px; color:#6C6C70; padding:14px 16px; }
+
+  /* 超支弹窗 */
+  .dialog-bg { position:absolute; inset:0; background:rgba(0,0,0,.32); z-index:70; display:flex; align-items:flex-end; }
+  .dialog { width:100%; padding:0 8px 8px; }
+  .dialog .box { background:#F4F4F6; border-radius:14px; overflow:hidden; margin-bottom:8px; }
+  .dialog .dt { text-align:center; font-size:13px; font-weight:600; padding:16px 20px 4px; line-height:1.5; }
+  .dialog .dm { text-align:center; font-size:13px; color:#6C6C70; padding:2px 20px 14px; line-height:1.5; }
+  .dialog .act { text-align:center; font-size:17px; color:#3B82F6; padding:14px 0; }
+  .dialog .act + .act, .dialog .dt + .act, .dialog .act.danger { border-top:.5px solid #C6C6C8; }
+  .dialog .act.cancel { font-weight:600; }
+  .dialog .box.cancelbox .act { font-weight:600; }
+
+  /* 列表页通用 */
+  .lgroup { background:#fff; border-radius:10px; margin:0 16px; overflow:hidden; }
+  .lgroup .row { font-size:16px; padding:11px 16px; display:flex; align-items:center; gap:10px; }
+  .lgroup .row + .row { border-top:.5px solid #E5E5EA; }
+  .licon { width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:15px; flex:none; }
+  .lmain { display:flex; flex-direction:column; gap:1px; min-width:0; }
+  .lmain .t { font-size:15px; display:flex; align-items:center; gap:6px; }
+  .lmain .s { font-size:12px; color:#8E8E93; }
+  .lval { margin-left:auto; text-align:right; }
+  .lval .a { font-size:15px; font-weight:600; font-variant-numeric:tabular-nums; }
+  .lval .b { font-size:11px; color:#8E8E93; margin-top:1px; }
+  .lfooter { font-size:12px; color:#8E8E93; line-height:1.55; padding:8px 32px 0; }
+  .lhead { font-size:13px; color:#6C6C70; text-transform:none; padding:0 32px 7px; display:flex; justify-content:space-between; }
+  .lhead:first-child { padding-top:2px; }
+  .tag { font-size:10px; padding:1px 6px; border-radius:999px; font-weight:500; }
+  .search { margin:4px 16px 10px; background:#E3E3E8; border-radius:10px; display:flex; align-items:center; gap:6px; padding:8px 10px; color:#8E8E93; font-size:15px; }
+  .scope { display:flex; align-items:center; justify-content:space-between; padding:2px 16px 8px; }
+  .scope .m { font-size:16px; font-weight:600; display:flex; align-items:center; gap:18px; }
+  .scope .chev { color:#3B82F6; }
+  .scope .all { color:#3B82F6; font-size:13px; }
+  .red { color:#FF3B30; } .green { color:#34C759; } .orange { color:#FF9500; } .gray { color:#8E8E93; } .blue { color:#3B82F6; }
+  .dim { opacity:.55; color:#8E8E93; }
+</style>
+</head>
+<body>
+
+<h1>分区预算 · 界面预览</h1>
+<div class="sub">基于当前 SwiftUI 代码 1:1 还原 · 示例数据 · 2026年8月</div>
+<div class="note">
+  <b>说明</b>：① App 内的图标是 Apple SF Symbols 线性图标，网页预览用 emoji 近似代替；② 状态色规则与代码一致——剩余 &gt;30% 绿色 / 10%~30% 橙色提醒 / 0~10% 红色警告 / 负数红色超支；③ 金额一律两位精度、千分位分组；④ 深色模式跟随系统自动切换，此处以浅色模式展示。
+</div>
+
+<div class="grid">
+
+  <!-- ============ ① 首页 ============ -->
+  <div class="shot">
+    <div class="label">① 首页 — 一眼看到每个预算还剩多少</div>
+    <div class="phone">
+      <div class="island"></div>
+      <div class="statusbar"><span>9:41</span><span class="right">▮▮▮ ⏻</span></div>
+      <div class="content">
+        <div class="navbar">
+          <span style="width:40px"></span><span class="title">分区预算</span>
+          <span class="navbtn"><svg width="24" height="24" viewBox="0 0 24 24" fill="#3B82F6"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 9h4v2h-4v4h-2v-4H7v-2h4V7h2v4Z"/></svg></span>
+        </div>
+        <div class="scroll">
+          <div class="monthnav">
+            <div class="mbtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></div>
+            <div class="mtitle">2026年8月</div>
+            <div style="width:34px"></div>
+          </div>
+          <div class="overview">
+            <div class="cap">本月还可以花</div>
+            <div class="big">¥1,873</div>
+            <div class="stats">
+              <div class="stat"><div class="k">本月预算</div><div class="v">¥5,100</div></div>
+              <div class="stat"><div class="k">已使用</div><div class="v">¥3,227</div></div>
+              <div class="stat"><div class="k">未分配</div><div class="v">¥200</div><div class="go">去分配 &gt;</div></div>
+            </div>
+          </div>
+          <div class="addbtn">＋ 记一笔</div>
+          <div class="sectitle">日常预算</div>
+          <div class="card">
+            <div class="top">
+              <div class="cicon" style="background:rgba(249,115,22,.15)">🍜</div>
+              <div><div class="cname">餐饮</div><div class="cstate gray">剩余充足 · 已用 39%</div></div>
+              <div class="right"><div class="rem">剩 ¥736</div><div class="bud">预算 ¥1,200</div></div>
+            </div>
+            <div class="track"><div class="fill" style="width:39%;background:#34C759"></div></div>
+            <div class="bottom"><span>已花 ¥464</span><span>占比 39%</span></div>
+          </div>
+          <div class="card">
+            <div class="top">
+              <div class="cicon" style="background:rgba(139,92,246,.15)">🎮</div>
+              <div><div class="cname">娱乐</div><div class="cstate gray">剩余充足 · 已用 57%</div></div>
+              <div class="right"><div class="rem">剩 ¥215</div><div class="bud">预算 ¥500</div></div>
+            </div>
+            <div class="track"><div class="fill" style="width:57%;background:#34C759"></div></div>
+            <div class="bottom"><span>已花 ¥285</span><span>占比 57%</span></div>
+          </div>
+          <div class="card">
+            <div class="top">
+              <div class="cicon" style="background:rgba(236,72,153,.15)">🛒</div>
+              <div><div class="cname">购物</div><div class="cstate red">即将用完 · 已用 90%</div></div>
+              <div class="right"><div class="rem">剩 ¥80</div><div class="bud">预算 ¥800</div></div>
+            </div>
+            <div class="track"><div class="fill" style="width:90%;background:#FF3B30"></div></div>
+            <div class="bottom"><span>已花 ¥720</span><span>占比 90%</span></div>
+          </div>
+          <div class="card">
+            <div class="top">
+              <div class="cicon" style="background:rgba(59,130,246,.15)">🚌</div>
+              <div><div class="cname">交通</div><div class="cstate orange">剩余不多 · 已用 70%</div></div>
+              <div class="right"><div class="rem">剩 ¥90</div><div class="bud">预算 ¥300</div></div>
+            </div>
+            <div class="track"><div class="fill" style="width:70%;background:#FF9500"></div></div>
+            <div class="bottom"><span>已花 ¥210</span><span>占比 70%</span></div>
+          </div>
+          <div class="card">
+            <div class="top">
+              <div class="cicon" style="background:rgba(100,116,139,.15)">🏠</div>
+              <div><div class="cname">固定支出</div><div class="cstate red">已超支 ¥48</div></div>
+              <div class="right"><div class="rem red">剩 -¥48</div><div class="bud">预算 ¥1,500</div></div>
+            </div>
+            <div class="track"><div class="fill" style="width:100%;background:#FF3B30"></div></div>
+            <div class="bottom"><span>已花 ¥1,548</span><span>占比 103%</span></div>
+          </div>
+          <div class="fade"></div>
+        </div>
+        <div class="tabbar">
+          <div class="tab active"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3l9-8z"/></svg>首页</div>
+          <div class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M14 0v10h10A10 10 0 0 0 14 0z" opacity=".55"/></svg>预算</div>
+          <div class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="3" width="16" height="18" rx="3" opacity=".4"/><rect x="7" y="8" width="10" height="2" rx="1"/><rect x="7" y="12" width="10" height="2" rx="1"/><rect x="7" y="16" width="6" height="2" rx="1"/></svg>记录</div>
+          <div class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm9.4 5.6c.05-.5.05-1.2 0-1.7l2-1.6-2-3.4-2.4 1a7.6 7.6 0 0 0-1.5-.9L17 4h-4l-.5 2.6c-.5.2-1 .5-1.5.9l-2.4-1-2 3.4 2 1.6c-.05.5-.05 1.2 0 1.7l-2 1.6 2 3.4 2.4-1c.5.4 1 .7 1.5.9L13 20h4l.5-2.6c.5-.2 1-.5 1.5-.9l2.4 1 2-3.4-2-1.6z" transform="translate(-1 0)"/></svg>我的</div>
+        </div>
+      </div>
+      <div class="homebar"></div>
+    </div>
+  </div>
+
+  <!-- ============ ② 记一笔 ============ -->
+  <div class="shot">
+    <div class="label">② 记一笔 — 金额+描述即可，分类自动推荐</div>
+    <div class="phone">
+      <div class="island"></div>
+      <div class="statusbar"><span>9:41</span><span class="right">▮▮▮ ⏻</span></div>
+      <div class="content">
+        <div class="sheet">
+          <div class="grab"></div>
+          <div class="formnav">
+            <span class="navbtn">取消</span><span class="t">记一笔</span><span class="navbtn" style="font-weight:600">保存</span>
+          </div>
+          <div class="seg"><div class="on">支出</div><div>收入</div></div>
+          <div class="group"><div class="amount"><span class="cur">¥</span><span class="num">313</span></div></div>
+          <div class="group">
+            <div style="font-size:13px;color:#6C6C70;padding:12px 16px 2px">消费信息</div>
+            <div class="row"><span class="input-ph">消费内容（如：麦当劳午饭）</span></div>
+            <div class="row" style="border-top:none;padding-bottom:2px"><span class="input-ph" style="font-size:0"></span></div>
+          </div>
+          <div class="group" style="margin-top:8px">
+            <div class="chips">
+              <div class="chip" style="background:rgba(249,115,22,.12);color:#F97316">🍜 餐饮</div>
+              <div class="chip" style="background:#8B5CF6;color:#fff">🎮 娱乐</div>
+              <div class="chip" style="background:rgba(236,72,153,.12);color:#EC4899">🛒 购物</div>
+              <div class="chip" style="background:rgba(59,130,246,.12);color:#3B82F6">🚌 交通</div>
+              <div class="chip" style="background:rgba(20,184,166,.12);color:#14B8A6">👥 社交</div>
+              <div class="chip" style="background:rgba(100,116,139,.12);color:#64748B">🏠 固定支出</div>
+              <div class="chip" style="background:rgba(34,197,94,.12);color:#22C55E">🐷 储蓄</div>
+            </div>
+            <div class="hint" style="padding-top:0">✨ 已推荐「娱乐」（历史记录）</div>
+          </div>
+          <div class="group">
+            <div class="row"><span class="lab">日期</span><span class="val" style="color:#000">2026年8月29日</span></div>
+          </div>
+          <div class="group">
+            <div class="row"><span class="input-ph">备注（可选）</span></div>
+          </div>
+          <div class="footer-ph">输入内容后自动匹配分区：历史记录 → 内置词库，也可以手动点选。余额不足时会提示，由你决定怎么处理。</div>
+        </div>
+      </div>
+      <div class="homebar"></div>
+    </div>
+  </div>
+
+  <!-- ============ ③ 超支确认 ============ -->
+  <div class="shot">
+    <div class="label">③ 预算不足 — 五种处理方式，不强制拦截</div>
+    <div class="phone">
+      <div class="island"></div>
+      <div class="statusbar"><span>9:41</span><span class="right">▮▮▮ ⏻</span></div>
+      <div class="content">
+        <div class="navbar"><span style="width:40px"></span><span class="title">记一笔</span><span class="navbtn">保存</span></div>
+        <div class="seg"><div class="on">支出</div><div>收入</div></div>
+        <div class="group"><div class="amount"><span class="cur">¥</span><span class="num">313</span></div></div>
+        <div class="group">
+          <div class="chips">
+            <div class="chip" style="background:rgba(249,115,22,.12);color:#F97316">🍜 餐饮</div>
+            <div class="chip" style="background:#8B5CF6;color:#fff">🎮 娱乐</div>
+            <div class="chip" style="background:rgba(236,72,153,.12);color:#EC4899">🛒 购物</div>
+            <div class="chip" style="background:rgba(59,130,246,.12);color:#3B82F6">🚌 交通</div>
+          </div>
+          <div class="hint" style="padding-top:0">✨ 已推荐「娱乐」（历史记录）</div>
+        </div>
+        <div class="dialog-bg">
+          <div class="dialog">
+            <div class="box">
+              <div class="dt">「娱乐」剩 ¥215，这笔要 ¥313</div>
+              <div class="dm">还差 ¥98。预算是帮你做决策的，<br>不会强制拦住你。</div>
+              <div class="act">仍然记录（余额将为负）</div>
+              <div class="act">从其他分区转入差额</div>
+              <div class="act">增加本月预算</div>
+              <div class="act">更换分区</div>
+            </div>
+            <div class="box cancelbox"><div class="act cancel">取消</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="homebar"></div>
+    </div>
+  </div>
+
+  <!-- ============ ④ 预算页 ============ -->
+  <div class="shot">
+    <div class="label">④ 预算 — 分配、分区管理、转移</div>
+    <div class="phone">
+      <div class="island"></div>
+      <div class="statusbar"><span>9:41</span><span class="right">▮▮▮ ⏻</span></div>
+      <div class="content">
+        <div class="navbar">
+          <span style="width:40px"></span><span class="title">预算</span>
+          <span class="navbtn">编辑&nbsp;&nbsp;<svg width="20" height="20" viewBox="0 0 24 24" fill="#3B82F6"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5z"/></svg></span>
+        </div>
+        <div class="scroll" style="gap:18px">
+          <div>
+            <div class="lhead">本月预算（2026年8月）</div>
+            <div class="lgroup">
+              <div class="row"><span class="lab">本月收入</span><span class="val" style="margin-left:auto;color:#000">¥6,500</span></div>
+              <div class="row"><span class="lab">已分配</span><span class="val" style="margin-left:auto;color:#000">¥6,300</span></div>
+              <div class="row"><span class="lab">未分配</span><span class="val" style="margin-left:auto">¥200</span></div>
+              <div class="row blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M4 7h16v3H4V7Zm0 7h16v3H4v-3Z"/></svg>分配本月预算</div>
+            </div>
+            <div class="lfooter">未分配 = 本月收入 − 已分配。给各分区分好钱后，消费才会从对应分区扣除。</div>
+          </div>
+          <div>
+            <div class="lhead">预算分区</div>
+            <div class="lgroup">
+              <div class="row">
+                <div class="licon" style="background:rgba(249,115,22,.15)">🍜</div>
+                <div class="lmain"><div class="t">餐饮</div><div class="s">默认 ¥1,200/月</div></div>
+                <div class="lval"><div class="a">¥736</div><div class="b">本月剩余</div></div>
+              </div>
+              <div class="row">
+                <div class="licon" style="background:rgba(139,92,246,.15)">🎮</div>
+                <div class="lmain"><div class="t">娱乐 <span class="tag" style="background:rgba(59,130,246,.15);color:#3B82F6">结转</span></div><div class="s">默认 ¥500/月</div></div>
+                <div class="lval"><div class="a">¥215</div><div class="b">本月剩余</div></div>
+              </div>
+              <div class="row">
+                <div class="licon" style="background:rgba(236,72,153,.15)">🛒</div>
+                <div class="lmain"><div class="t">购物</div><div class="s">默认 ¥800/月</div></div>
+                <div class="lval"><div class="a">¥80</div><div class="b">本月剩余</div></div>
+              </div>
+              <div class="row">
+                <div class="licon" style="background:rgba(100,116,139,.15)">🏠</div>
+                <div class="lmain"><div class="t">固定支出</div><div class="s">默认 ¥1,500/月</div></div>
+                <div class="lval"><div class="a red">-¥48</div><div class="b">本月剩余</div></div>
+              </div>
+              <div class="row">
+                <div class="licon" style="background:rgba(34,197,94,.15)">🐷</div>
+                <div class="lmain"><div class="t">储蓄 <span class="tag" style="background:rgba(52,199,89,.15);color:#34C759">储蓄</span> <span class="tag" style="background:rgba(59,130,246,.15);color:#3B82F6">结转</span></div><div class="s">默认 ¥1,200/月</div></div>
+                <div class="lval"><div class="a">¥1,200</div><div class="b">本月剩余</div></div>
+              </div>
+            </div>
+            <div class="lfooter">长按拖动调整顺序；左滑可隐藏或删除（有消费记录的分区只能隐藏）。</div>
+          </div>
+          <div>
+            <div class="lhead">工具</div>
+            <div class="lgroup">
+              <div class="row blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7 3l-4 4 4 4V8h7V6H7V3Zm10 18l4-4-4-4v3h-7v2h7v3Z"/></svg>预算转移</div>
+            </div>
+            <div class="lfooter">在分区之间重新分配本月的剩余额度。</div>
+          </div>
+          <div class="fade"></div>
+        </div>
+        <div class="tabbar">
+          <div class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3l9-8z"/></svg>首页</div>
+          <div class="tab active"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M14 0v10h10A10 10 0 0 0 14 0z" opacity=".55"/></svg>预算</div>
+          <div class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="3" width="16" height="18" rx="3" opacity=".4"/><rect x="7" y="8" width="10" height="2" rx="1"/><rect x="7" y="12" width="10" height="2" rx="1"/><rect x="7" y="16" width="6" height="2" rx="1"/></svg>记录</div>
+          <div class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm9.4 5.6c.05-.5.05-1.2 0-1.7l2-1.6-2-3.4-2.4 1a7.6 7.6 0 0 0-1.5-.9L17 4h-4l-.5 2.6c-.5.2-1 .5-1.5.9l-2.4-1-2 3.4 2 1.6c-.05.5-.05 1.2 0 1.7l-2 1.6 2 3.4 2.4-1c.5.4 1 .7 1.5.9L13 20h4l.5-2.6c.5-.2 1-.5 1.5-.9l2.4 1 2-3.4-2-1.6z" transform="translate(-1 0)"/></svg>我的</div>
+        </div>
+      </div>
+      <div class="homebar"></div>
+    </div>
+  </div>
+
+  <!-- ============ ⑤ 记录页 ============ -->
+  <div class="shot">
+    <div class="label">⑤ 记录 — 搜索 / 筛选 / 编辑 / 删除</div>
+    <div class="phone">
+      <div class="island"></div>
+      <div class="statusbar"><span>9:41</span><span class="right">▮▮▮ ⏻</span></div>
+      <div class="content">
+        <div class="navbar"><span style="width:40px"></span><span class="title">记录</span>
+          <span class="navbtn"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M7 12h10M10 18h4"/></svg></span>
+        </div>
+        <div class="search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8E8E93" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>搜索 麦当劳 / Steam / 备注…</div>
+        <div class="scope">
+          <div class="m"><span class="chev">‹</span>2026年8月<span class="chev" style="visibility:hidden">›</span></div>
+          <div class="all">全部</div>
+        </div>
+        <div style="flex:1;overflow:hidden">
+          <div class="lhead"><span>共 21 笔</span><span>支出 ¥3,227&nbsp;&nbsp;<span class="green">收入 ¥6,500</span></span></div>
+          <div class="lgroup">
+            <div class="row">
+              <div class="licon" style="background:rgba(249,115,22,.15)">🍜</div>
+              <div class="lmain"><div class="t">麦当劳</div><div class="s">餐饮 · 今天 12:30</div></div>
+              <div class="lval"><div class="a red">-¥36</div></div>
+            </div>
+            <div class="row">
+              <div class="licon" style="background:rgba(249,115,22,.15)">🍜</div>
+              <div class="lmain"><div class="t">瑞幸</div><div class="s">餐饮 · 今天 09:15</div></div>
+              <div class="lval"><div class="a red">-¥19.9</div></div>
+            </div>
+            <div class="row">
+              <div class="licon" style="background:rgba(59,130,246,.15)">🚌</div>
+              <div class="lmain"><div class="t">滴滴</div><div class="s">交通 · 昨天 21:40</div></div>
+              <div class="lval"><div class="a red">-¥68.5</div></div>
+            </div>
+            <div class="row">
+              <div class="licon" style="background:rgba(139,92,246,.15)">🎮</div>
+              <div class="lmain"><div class="t">电影票</div><div class="s">娱乐 · 昨天 15:02</div></div>
+              <div class="lval"><div class="a red">-¥45.9</div></div>
+            </div>
+            <div class="row">
+              <div class="licon" style="background:rgba(236,72,153,.15)">🛒</div>
+              <div class="lmain"><div class="t">优衣库</div><div class="s">购物 · 8月27日 19:26</div></div>
+              <div class="lval"><div class="a red">-¥219</div></div>
+            </div>
+            <div class="row">
+              <div class="licon" style="background:rgba(100,116,139,.15)">🏠</div>
+              <div class="lmain"><div class="t">房租</div><div class="s">固定支出 · 8月26日 10:00</div></div>
+              <div class="lval"><div class="a red">-¥1,500</div></div>
+            </div>
+            <div class="row">
+              <div class="licon" style="background:rgba(59,130,246,.15)">🚌</div>
+              <div class="lmain"><div class="t">地铁</div><div class="s">交通 · 8月26日 08:47</div></div>
+              <div class="lval"><div class="a red">-¥12</div></div>
+            </div>
+            <div class="row">
+              <div class="licon gray" style="background:rgba(142,142,147,.15)">＋</div>
+              <div class="lmain"><div class="t">工资</div><div class="s">收入 · 8月1日 10:00</div></div>
+              <div class="lval"><div class="a green">+¥6,500</div></div>
+            </div>
+          </div>
+          <div class="fade" style="position:fixed"></div>
+        </div>
+        <div class="tabbar">
+          <div class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3l9-8z"/></svg>首页</div>
+          <div class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M14 0v10h10A10 10 0 0 0 14 0z" opacity=".55"/></svg>预算</div>
+          <div class="tab active"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="3" width="16" height="18" rx="3" opacity=".4"/><rect x="7" y="8" width="10" height="2" rx="1"/><rect x="7" y="12" width="10" height="2" rx="1"/><rect x="7" y="16" width="6" height="2" rx="1"/></svg>记录</div>
+          <div class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm9.4 5.6c.05-.5.05-1.2 0-1.7l2-1.6-2-3.4-2.4 1a7.6 7.6 0 0 0-1.5-.9L17 4h-4l-.5 2.6c-.5.2-1 .5-1.5.9l-2.4-1-2 3.4 2 1.6c-.05.5-.05 1.2 0 1.7l-2 1.6 2 3.4 2.4-1c.5.4 1 .7 1.5.9L13 20h4l.5-2.6c.5-.2 1-.5 1.5-.9l2.4 1 2-3.4-2-1.6z" transform="translate(-1 0)"/></svg>我的</div>
+        </div>
+      </div>
+      <div class="homebar"></div>
+    </div>
+  </div>
+
+  <!-- ============ ⑥ 我的 ============ -->
+  <div class="shot">
+    <div class="label">⑥ 我的 — 第二批功能入口占位</div>
+    <div class="phone">
+      <div class="island"></div>
+      <div class="statusbar"><span>9:41</span><span class="right">▮▮▮ ⏻</span></div>
+      <div class="content">
+        <div class="navbar"><span style="width:40px"></span><span class="title">我的</span><span style="width:40px"></span></div>
+        <div class="scroll" style="gap:18px">
+          <div>
+            <div class="lhead">数据</div>
+            <div class="lgroup">
+              <div class="row"><span class="lab">存储位置</span><span class="val" style="margin-left:auto;color:#000">仅本机</span></div>
+              <div class="row dim">数据导出 / 导入（第二批）</div>
+              <div class="row dim">iCloud 备份（后续）</div>
+            </div>
+            <div class="lfooter">核心财务数据全部保存在本机（SwiftData 本地数据库），离线可用，不上传任何服务器。</div>
+          </div>
+          <div>
+            <div class="lhead">智能分类</div>
+            <div class="lgroup">
+              <div class="row"><span class="lab">内置词库</span><span class="val" style="margin-left:auto;color:#000">104 条关键词</span></div>
+              <div class="row dim">自定义分类规则（第二批）</div>
+              <div class="row dim">AI 设置（第二批）</div>
+            </div>
+          </div>
+          <div>
+            <div class="lhead">账户</div>
+            <div class="lgroup">
+              <div class="row dim">资金账户管理（第二批）</div>
+            </div>
+          </div>
+          <div>
+            <div class="lhead">安全</div>
+            <div class="lgroup">
+              <div class="row dim">Face ID 解锁（第二批）</div>
+            </div>
+          </div>
+          <div>
+            <div class="lhead">关于</div>
+            <div class="lgroup">
+              <div class="row"><span class="lab">版本</span><span class="val" style="margin-left:auto;color:#000">0.1.0</span></div>
+              <div class="row"><span class="lab">核心原则</span><span class="val" style="margin-left:auto;color:#000">离线优先 · 数据本地</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="tabbar">
+          <div class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3l9-8z"/></svg>首页</div>
+          <div class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M14 0v10h10A10 10 0 0 0 14 0z" opacity=".55"/></svg>预算</div>
+          <div class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="3" width="16" height="18" rx="3" opacity=".4"/><rect x="7" y="8" width="10" height="2" rx="1"/><rect x="7" y="12" width="10" height="2" rx="1"/><rect x="7" y="16" width="6" height="2" rx="1"/></svg>记录</div>
+          <div class="tab active"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm9.4 5.6c.05-.5.05-1.2 0-1.7l2-1.6-2-3.4-2.4 1a7.6 7.6 0 0 0-1.5-.9L17 4h-4l-.5 2.6c-.5.2-1 .5-1.5.9l-2.4-1-2 3.4 2 1.6c-.05.5-.05 1.2 0 1.7l-2 1.6 2 3.4 2.4-1c.5.4 1 .7 1.5.9L13 20h4l.5-2.6c.5-.2 1-.5 1.5-.9l2.4 1 2-3.4-2-1.6z" transform="translate(-1 0)"/></svg>我的</div>
+        </div>
+      </div>
+      <div class="homebar"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="sub" style="margin-top:40px">状态阈值：剩余 &gt;30% 正常 · 10%~30% 提醒 · 0~10% 警告 · 负数超支 ｜ 图标说明：真机为 SF Symbols 单色线性图标，此处用彩色 emoji 近似</div>
+</body>
+</html>
