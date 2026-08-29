@@ -85,7 +85,8 @@ struct AddTransactionSheet: View {
                             .frame(maxWidth: .infinity)
                     }
                     .disabled(!model.canSave)
-                    .listRowBackground(Color.accentColor)
+                    .dsProminentGlassButton()
+                    .listRowBackground(Color.clear)
                 }
                 .listRowInsets(EdgeInsets())
             }
@@ -350,7 +351,15 @@ struct CategoryPickerSheet: View {
                                         .foregroundStyle(.tint)
                                 }
                             }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 10)
+                            .dsGlass(
+                                selection == category.categoryID ? .interactive : .regular,
+                                in: RoundedRectangle(cornerRadius: DS.cornerRadius)
+                            )
                         }
+                        .buttonStyle(.plain)
+                        .listRowBackground(Color.clear)
                     }
                 } footer: {
                     Text("选择后自动扣除该分区的预算。")

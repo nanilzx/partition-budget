@@ -83,20 +83,31 @@ struct HomeView: View {
             savingSection
             recentSection
         }
+        .dsMinimizeTabBarOnScroll()
         .navigationTitle("分区预算")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button {
-                    showingAddSheet = true
-                } label: {
-                    Image(systemName: "plus")
-                }
-            }
+        .overlay(alignment: .bottomTrailing) {
+            floatingAddButton
         }
     }
 
-    /// 顶部：月份切换 + 「本月还可使用」大数字焦点。
+    /// 悬浮玻璃「记一笔」：整个 App 最重要的操作（iOS 26 Liquid Glass）。
+    private var floatingAddButton: some View {
+        Button {
+            showingAddSheet = true
+        } label: {
+            Label("记一笔", systemImage: "plus")
+                .font(.subheadline.weight(.semibold))
+                .padding(.horizontal, 18)
+                .padding(.vertical, 13)
+        }
+        .dsGlass(.interactive, in: Capsule())
+        .foregroundStyle(.primary)
+        .padding(.trailing, DS.padding)
+        .padding(.bottom, 6)
+    }
+
+    /// 顶部：月份切换（玻璃容器）+ 「本月还可使用」大数字焦点，浮在内容之上。
     private var heroSection: some View {
         Section {
             VStack(alignment: .leading, spacing: 6) {
@@ -110,7 +121,7 @@ struct HomeView: View {
                     .foregroundStyle(summary.remainingCents < 0 ? Color.red : Color.primary)
                     .contentTransition(.numericText())
                     .animation(.easeOut(duration: 0.25), value: summary.remainingCents)
-                Text("已使用 \(Money(cents: summary.spentCents).displayText) · 总预算 \(Money(cents: summary.totalBudgetCents).displayText)")
+                Text("已使用 \(Money(cents: summary.spentCents).displayText) · 总预算 \(Money(cents: summary.totalBudgetCents).displayText) · 未分配 \(Money(cents: summary.unallocatedCents).displayText)")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                 if let netWorthCents {
@@ -119,8 +130,11 @@ struct HomeView: View {
                         .foregroundStyle(.tertiary)
                 }
             }
-            .padding(.vertical, 4)
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .dsGlass(.regular, in: RoundedRectangle(cornerRadius: DS.glassCornerRadius))
             .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
         }
     }
 
@@ -131,9 +145,10 @@ struct HomeView: View {
             } label: {
                 Image(systemName: "chevron.left")
                     .font(.subheadline.weight(.semibold))
+                    .frame(width: 30, height: 30)
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(.tint)
+            .dsGlass(.interactive, in: Circle())
+            .foregroundStyle(.primary)
             Spacer()
             VStack(spacing: 0) {
                 Text("\(selectedMonth.month)月")
@@ -143,17 +158,24 @@ struct HomeView: View {
                     .foregroundStyle(.secondary)
             }
             Spacer()
-            if selectedMonth < BudgetMonth.current {
-                Button {
-                    selectedMonth = selectedMonth.next
-                } label: {
-                    Image(systemName: "chevron.right")
-                        .font(.subheadline.weight(.semibold))
+            Group {
+                if selectedMonth < BudgetMonth.current {
+                    Button {
+                        selectedMonth = selectedMonth.next
+                    } label: {
+                        Image(systemName: "chevron.right")
+                            .font(.subheadline.weight(.semibold))
+                            .frame(width: 30, height: 30)
+                    }
+                    .dsGlass(.interactive, in: Circle())
+                    .foregroundStyle(.primary)
+                } else {
+                    Color.clear.frame(width: 30, height: 30)
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(.tint)
             }
         }
+        .padding(.vertical, 4)
+        .dsGlassContainer(spacing: 14)
     }
 
     private var dailySection: some View {

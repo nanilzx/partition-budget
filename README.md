@@ -4,7 +4,9 @@
 
 > 收入一笔钱 → 提前分到不同用途 → 每消费一笔快速记账 → 系统自动扣对应分区的钱 → 随时打开，一眼看到每个预算还剩多少。
 
-**技术栈：SwiftUI + SwiftData，最低 iOS 17，零第三方依赖，数据全部保存在本机，离线完全可用。**
+**技术栈：SwiftUI + SwiftData，最低 iOS 17（iOS 26 上启用 Liquid Glass），零第三方依赖，数据全部保存在本机，离线完全可用。**
+
+> **iOS 26 Liquid Glass**：首页汇总区、月份切换、悬浮「记一笔」等导航/控件层使用官方 `glassEffect` / `GlassEffectContainer` API，系统 Tab Bar / Toolbar 自动获得液态玻璃外观；旧系统自动回退 `.thinMaterial` / 系统样式。玻璃只用于强调层级，内容列表保持清晰克制。云端 CI 已切换到 macOS 26 + Xcode 26 SDK。
 
 ---
 

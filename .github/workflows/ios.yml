@@ -8,7 +8,7 @@ on:
 jobs:
   test:
     name: 编译 + 单元测试
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
 
@@ -23,12 +23,12 @@ jobs:
           xcodebuild test \
             -project PartitionBudget.xcodeproj \
             -scheme BudgetApp \
-            -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
+            -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest' \
             -skipMacroValidation
 
   ipa:
     name: 打包未签名 IPA
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
 
