@@ -25,7 +25,7 @@ struct Money: Hashable, Comparable, Codable, Sendable {
                 raiseOnExactness: false,
                 raiseOnOverflow: false,
                 raiseOnUnderflow: false,
-                divideByZero: false
+                raiseOnDivideByZero: false
             )
         )
         guard scaled != NSDecimalNumber.notANumber else { return nil }

@@ -21,7 +21,7 @@ struct BudgetService {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { throw ServiceError.invalidName }
         let all = try BudgetCategory.all(in: context)
-        guard !all.contains { $0.name == trimmed } else {
+        guard !all.contains(where: { $0.name == trimmed }) else {
             throw ServiceError.duplicateName(trimmed)
         }
         let category = BudgetCategory(
