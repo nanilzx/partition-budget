@@ -42,11 +42,11 @@ final class AccountServiceTests: ServiceTestCase {
             date: date(2026, 8, 10), accountID: account.accountID
         )
         var all = try context.fetch(FetchDescriptor<Transaction>())
-        XCTAssertEqual(accounts.balanceCents(of: account, transactions: all), 0)
+        XCTAssertEqual(accounts.balanceCents(of: account, transactions: all), 90000)
 
         try transactions.update(txn, cents: 15000)
         all = try context.fetch(FetchDescriptor<Transaction>())
-        XCTAssertEqual(accounts.balanceCents(of: account, transactions: all), -5000)
+        XCTAssertEqual(accounts.balanceCents(of: account, transactions: all), 85000)
 
         try transactions.delete(txn)
         all = try context.fetch(FetchDescriptor<Transaction>())

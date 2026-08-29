@@ -65,9 +65,10 @@ final class ClassificationTests: ServiceTestCase {
         try transactions.update(txn, categoryID: fun.categoryID)
 
         XCTAssertTrue(txn.isUserCorrected)
+        // 纠正后自动生成用户自定义规则（优先级高于历史与词库）
         let result = ClassificationService(context: context)
             .suggest(text: "STEAM PURCHASE", categories: [shopping, fun])
-        XCTAssertEqual(result?.source, .historyRule)
+        XCTAssertEqual(result?.source, .userRule)
         XCTAssertEqual(result?.categoryID, fun.categoryID)
     }
 
