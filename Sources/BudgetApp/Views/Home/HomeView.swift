@@ -139,43 +139,44 @@ struct HomeView: View {
     }
 
     private var monthNavigator: some View {
-        HStack {
-            Button {
-                selectedMonth = selectedMonth.previous
-            } label: {
-                Image(systemName: "chevron.left")
-                    .font(.subheadline.weight(.semibold))
-                    .frame(width: 30, height: 30)
-            }
-            .dsGlass(.interactive, in: Circle())
-            .foregroundStyle(.primary)
-            Spacer()
-            VStack(spacing: 0) {
-                Text("\(selectedMonth.month)月")
-                    .font(.headline)
-                Text(String(selectedMonth.year))
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-            Spacer()
-            Group {
-                if selectedMonth < BudgetMonth.current {
-                    Button {
-                        selectedMonth = selectedMonth.next
-                    } label: {
-                        Image(systemName: "chevron.right")
-                            .font(.subheadline.weight(.semibold))
-                            .frame(width: 30, height: 30)
+        dsGlassContainer(spacing: 14) {
+            HStack {
+                Button {
+                    selectedMonth = selectedMonth.previous
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(width: 30, height: 30)
+                }
+                .dsGlass(.interactive, in: Circle())
+                .foregroundStyle(.primary)
+                Spacer()
+                VStack(spacing: 0) {
+                    Text("\(selectedMonth.month)月")
+                        .font(.headline)
+                    Text(String(selectedMonth.year))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Group {
+                    if selectedMonth < BudgetMonth.current {
+                        Button {
+                            selectedMonth = selectedMonth.next
+                        } label: {
+                            Image(systemName: "chevron.right")
+                                .font(.subheadline.weight(.semibold))
+                                .frame(width: 30, height: 30)
+                        }
+                        .dsGlass(.interactive, in: Circle())
+                        .foregroundStyle(.primary)
+                    } else {
+                        Color.clear.frame(width: 30, height: 30)
                     }
-                    .dsGlass(.interactive, in: Circle())
-                    .foregroundStyle(.primary)
-                } else {
-                    Color.clear.frame(width: 30, height: 30)
                 }
             }
+            .padding(.vertical, 4)
         }
-        .padding(.vertical, 4)
-        .dsGlassContainer(spacing: 14)
     }
 
     private var dailySection: some View {
