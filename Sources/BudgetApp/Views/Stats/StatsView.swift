@@ -44,14 +44,20 @@ struct StatsView: View {
         StatsCalculator.totalsByCategory(transactions: monthTransactions, categories: categories)
     }
 
-    private var dailyData: [(day: Int, cents: Int64)] {
+    private struct DailyPoint: Identifiable {
+        let day: Int
+        let cents: Int64
+        var id: Int { day }
+    }
+
+    private var dailyData: [DailyPoint] {
         let daily = StatsCalculator.dailyExpenseCents(
             transactions: monthTransactions,
             year: month.year,
             month: month.month
         )
         let total = StatsCalculator.daysInMonth(month)
-        return (1...total).map { (day: $0, cents: daily[$0] ?? 0) }
+        return (1...total).map { DailyPoint(day: $0, cents: daily[$0] ?? 0) }
     }
 
     var body: some View {
@@ -116,10 +122,10 @@ struct StatsView: View {
 
     private var dailyChartSection: some View {
         Section {
-            Chart(dailyData, id: \.day) { item in
+            Chart(dailyData) { point in
                 BarMark(
-                    x: .value("日", item.day),
-                    y: .value("支出", Double(item.cents) / 100)
+                    x: .value("日", point.day),
+                    y: .value("支出", Double(point.cents) / 100)
                 )
                 .foregroundStyle(Color.accentColor.opacity(0.75))
                 .cornerRadius(2)

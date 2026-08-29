@@ -123,7 +123,7 @@ struct SavingGoalListView: View {
             }
             Text("\(Money(cents: current).displayText) / \(Money(cents: goal.targetCents).displayText)")
                 .font(.body.weight(.semibold))
-                .fontVariantNumeric(.tabularNums)
+                .monospacedDigit()
             GeometryReader { proxy in
                 ZStack(alignment: .leading) {
                     Capsule().fill(Color(.quaternarySystemFill))
