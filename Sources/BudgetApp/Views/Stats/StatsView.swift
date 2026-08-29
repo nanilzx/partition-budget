@@ -165,7 +165,7 @@ struct StatsView: View {
                         Spacer()
                         Text(Money(cents: item.cents).displayText)
                             .font(.subheadline.weight(.semibold))
-                            .fontVariantNumeric(.tabularNums)
+                            .monospacedDigit()
                         Text(total > 0 ? "\(Int((Double(item.cents) / Double(total) * 100).rounded()))%" : "0%")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
