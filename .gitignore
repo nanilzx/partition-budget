@@ -1,0 +1,9 @@
+# macOS / Xcode
+.DS_Store
+*.xcodeproj
+xcuserdata/
+DerivedData/
+build/
+*.ipa
+
+# 本工程的 .xcodeproj 由 XcodeGen 生成（见 project.yml），不纳入版本管理
