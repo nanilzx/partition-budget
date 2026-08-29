@@ -36,9 +36,16 @@ struct SettingsView: View {
                     LabeledContent("内置词库") {
                         Text("\(BuiltinClassificationRules.rules.count) 条关键词")
                     }
+                    if let shortcutsURL = URL(string: "shortcuts://") {
+                        Link(destination: shortcutsURL) {
+                            Label("打开「快捷指令」App", systemImage: "arrow.up.forward.app")
+                        }
+                    }
                     comingSoonRow("AI 智能识别（后续批次）", systemImage: "sparkles")
                 } header: {
                     Text("智能分类")
+                } footer: {
+                    Text("银行短信自动记账：在快捷指令 App 新建自动化 → 触发条件选「信息」并填银行短信号码 → 添加动作搜「分区预算」→ 选「识别消费（分区预算）」→ 把文本参数设为「信息内容」。若搜不到动作，请确认已安装最新版并重启一次手机。")
                 }
 
                 Section {

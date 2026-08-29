@@ -148,6 +148,8 @@ struct HomeView: View {
                         .font(.subheadline.weight(.semibold))
                         .frame(width: 30, height: 30)
                 }
+                // List 行内多个按钮必须显式 plain，否则整行都会触发第一个按钮
+                .buttonStyle(.plain)
                 .dsGlass(.interactive, in: Circle())
                 .foregroundStyle(.primary)
                 Spacer()
@@ -168,6 +170,7 @@ struct HomeView: View {
                                 .font(.subheadline.weight(.semibold))
                                 .frame(width: 30, height: 30)
                         }
+                        .buttonStyle(.plain)
                         .dsGlass(.interactive, in: Circle())
                         .foregroundStyle(.primary)
                     } else {

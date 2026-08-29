@@ -83,6 +83,7 @@ struct AddTransactionSheet: View {
                         Text(confirmTitle)
                             .font(.headline)
                             .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
                     }
                     .disabled(!model.canSave)
                     .dsProminentGlassButton()
