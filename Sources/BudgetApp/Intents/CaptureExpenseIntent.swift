@@ -15,9 +15,30 @@ struct CaptureExpenseIntent: AppIntent {
     @Parameter(title: "文本内容", requestValueDialog: "请提供要识别的短信或账单文本")
     var content: String
 
+    static var parameterSummary: some ParameterSummary {
+        Summary("识别消费：\(\.$content)")
+    }
+
     @MainActor
     func perform() async throws -> some IntentResult {
         CaptureIntake.shared.ingestText(content, source: "快捷指令")
         return .result()
     }
+}
+
+/// 把识别动作注册到「快捷指令」App 的分区预算动作列表，并提供可直接搜索的快捷指令。
+struct PartitionBudgetShortcuts: AppShortcutsProvider {
+    static var appShortcuts: [AppShortcut] {
+        AppShortcut(
+            intent: CaptureExpenseIntent(),
+            phrases: [
+                "用 \(.applicationName) 识别消费",
+                "在 \(.applicationName) 中记一笔",
+            ],
+            shortTitle: "识别消费",
+            systemImageName: "text.viewfinder"
+        )
+    }
+
+    static var shortcutTileColor: ShortcutTileColor { .orange }
 }
