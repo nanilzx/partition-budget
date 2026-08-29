@@ -108,7 +108,7 @@ struct HomeView: View {
     }
 
     /// 顶部：月份切换（玻璃容器）+ 「本月还可使用」大数字焦点，浮在内容之上。
-    /// 玻璃块的左右外边距用显式 padding 精确控制，和下方分组（16pt）完全对齐等宽。
+    /// List 已为分组内容提供统一的左右边距；这里不再重复缩进，以便和下方分组等宽。
     private var heroSection: some View {
         Section {
             VStack(alignment: .leading, spacing: 6) {
@@ -136,7 +136,6 @@ struct HomeView: View {
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
             .dsGlass(.regular, in: RoundedRectangle(cornerRadius: DS.glassCornerRadius))
-            .padding(.horizontal, DS.padding)
             .padding(.vertical, 6)
             .listRowBackground(Color.clear)
             .listRowInsets(EdgeInsets())
