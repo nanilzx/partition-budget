@@ -111,39 +111,43 @@ struct HomeView: View {
     /// List 已为分组内容提供统一的左右边距；行内左右必须为 0，避免再次缩进后比下方卡片窄。
     private var heroSection: some View {
         Section {
-            // 用真正的 Button（而非 onTapGesture）：List 行内手势会互相抢占导致点按不灵
-            Button {
-                DS.Haptic.tap()
-                showingAllocation = true
-            } label: {
-                VStack(alignment: .leading, spacing: 6) {
-                    monthNavigator
-                    Text("本月还可使用")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .padding(.top, 2)
-                    Text(Money(cents: summary.remainingCents).displayText)
-                        .font(.system(size: 50, weight: .heavy, design: .rounded))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.5)
-                        .foregroundStyle(summary.remainingCents < 0 ? Color.red : Color.primary)
-                        .contentTransition(.numericText())
-                        .animation(.easeOut(duration: 0.25), value: summary.remainingCents)
-                    Text("已使用 \(Money(cents: summary.spentCents).displayText) · 总预算 \(Money(cents: summary.totalBudgetCents).displayText) · 未分配 \(Money(cents: summary.unallocatedCents).displayText)")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                    if let netWorthCents {
-                        Text("实际资产 \(Money(cents: netWorthCents).displayText)")
-                            .font(.caption)
-                            .foregroundStyle(.tertiary)
+            // 月份切换按钮与分配入口不能互相嵌套，否则 List 会出现点击命中冲突。
+            VStack(alignment: .leading, spacing: 6) {
+                monthNavigator
+                Button {
+                    DS.Haptic.tap()
+                    showingAllocation = true
+                } label: {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("本月还可使用")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .padding(.top, 2)
+                        Text(Money(cents: summary.remainingCents).displayText)
+                            .font(.system(size: 50, weight: .heavy, design: .rounded))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.5)
+                            .foregroundStyle(summary.remainingCents < 0 ? Color.red : Color.primary)
+                            .contentTransition(.numericText())
+                            .animation(.easeOut(duration: 0.25), value: summary.remainingCents)
+                        Text("已使用 \(Money(cents: summary.spentCents).displayText) · 总预算 \(Money(cents: summary.totalBudgetCents).displayText) · 未分配 \(Money(cents: summary.unallocatedCents).displayText)")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                        if let netWorthCents {
+                            Text("实际资产 \(Money(cents: netWorthCents).displayText)")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                        }
                     }
+                    .frame(maxWidth: .infinity, minHeight: 132, alignment: .topLeading)
+                    .contentShape(Rectangle())
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 20)
-                .frame(maxWidth: .infinity, minHeight: 210, alignment: .topLeading)
-                .dsGlass(.regular, in: RoundedRectangle(cornerRadius: DS.glassCornerRadius))
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 20)
+            .frame(maxWidth: .infinity, minHeight: 210, alignment: .topLeading)
+            .dsGlass(.regular, in: RoundedRectangle(cornerRadius: DS.glassCornerRadius))
             .listRowBackground(Color.clear)
             .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 10, trailing: 0))
         }
