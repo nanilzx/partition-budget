@@ -4,7 +4,7 @@ import XCTest
 /// 银行扣款短信解析测试。
 final class CaptureParserTests: XCTestCase {
 
-    private let now = Date(timeIntervalSince1970: 1_787_900_000) // 2026-08-25 前后即可
+    private let now = Date(timeIntervalSince1970: 1_788_264_000) // 2026-09-01 前后，确保「08月30日」是过去日期
 
     func testParseBankSMS() throws {
         let text = "【招商银行】您尾号1234的储蓄卡8月29日12:30支付宝快捷支付交易100.00元，交易后余额9,999.99元。"
