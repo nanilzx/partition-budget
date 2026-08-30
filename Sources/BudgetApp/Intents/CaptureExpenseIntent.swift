@@ -6,21 +6,26 @@ import SwiftData
 /// 配合“收到银行短信时运行”自动化，把短信内容交给 App 在后台解析并持久化。
 /// 在快捷指令 App 里选择本动作，并把“短信正文”设为收到的信息正文即可。
 struct CaptureExpenseIntent: AppIntent {
-    static let title: LocalizedStringResource = "识别消费（分区预算）"
+    static let title: LocalizedStringResource = "接收银行短信正文"
     static let description = IntentDescription(
         "把银行短信交给分区预算，在后台识别并加入待确认列表。"
     )
+    static var isDiscoverable: Bool { true }
 
     /// 短信自动化可以在后台完成收集；用户稍后在 App 的“待确认”中核对入账。
     static var openAppWhenRun: Bool { false }
 
     /// 使用可选参数，避免个人自动化忘记绑定变量时停下来询问用户。
     /// 空输入仍会写入一条可见诊断，告诉用户如何修正快捷指令。
-    @Parameter(title: "短信正文")
+    @Parameter(
+        title: "短信正文",
+        description: "由“收到信息”自动化传入的当次短信正文",
+        inputConnectionBehavior: .connectToPreviousIntentResult
+    )
     var content: String?
 
     static var parameterSummary: some ParameterSummary {
-        Summary("识别消费：\(\.$content)")
+        Summary("接收银行短信：\(\.$content)")
     }
 
     @MainActor
@@ -38,21 +43,4 @@ struct CaptureExpenseIntent: AppIntent {
             return .result(dialog: "这条银行短信已经识别过，不会重复添加")
         }
     }
-}
-
-/// 把识别动作注册到「快捷指令」App 的分区预算动作列表，并提供可直接搜索的快捷指令。
-struct PartitionBudgetShortcuts: AppShortcutsProvider {
-    static var appShortcuts: [AppShortcut] {
-        AppShortcut(
-            intent: CaptureExpenseIntent(),
-            phrases: [
-                "用 \(.applicationName) 识别消费",
-                "在 \(.applicationName) 中记一笔",
-            ],
-            shortTitle: "识别消费",
-            systemImageName: "text.viewfinder"
-        )
-    }
-
-    static var shortcutTileColor: ShortcutTileColor { .orange }
 }

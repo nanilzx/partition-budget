@@ -9,8 +9,8 @@ struct AutomationSetupView: View {
                 setupStep(2, title: "新建个人自动化", detail: "打开“快捷指令”→“自动化”→“新建自动化”→ 选择“信息”。")
                 setupStep(3, title: "设置银行短信条件", detail: "在“发件人”中选择银行短信号码。如果号码无法直接选择，请先把它保存为联系人。")
                 setupStep(4, title: "选择立即运行", detail: "关闭运行前询问，收到匹配短信后即可在后台处理。")
-                setupStep(5, title: "添加分区预算动作", detail: "添加操作 →“App”→“分区预算”→ 选择“识别消费”。")
-                setupStep(6, title: "传入短信正文", detail: "点动作里的“短信正文”→ 选择“快捷指令输入”→ 再选择“正文/信息正文”。不要留空，也不要填写固定文字。")
+                setupStep(5, title: "添加正确的 App 操作", detail: "添加操作 →“App”→“分区预算”→ 选择“接收银行短信正文”。不要从“所有快捷指令”里直接点运行。")
+                setupStep(6, title: "检查自动连接", detail: "该操作会自动连接上一步收到的信息。如果“短信正文”仍为空，再点它并选择“快捷指令输入”的“正文/信息正文”。")
             } header: {
                 Text("设置步骤")
             } footer: {

@@ -52,4 +52,29 @@ final class CaptureParserTests: XCTestCase {
         let parsed = try XCTUnwrap(CaptureParser.parseBankSMS(text, now: now))
         XCTAssertEqual(parsed.merchant, "工商银行·麦当劳")
     }
+
+    func testParseBankOfChinaUnionPayIncomeTemplate() throws {
+        let text = "您的借记卡/账户1833于08月30日银联入账人民币1.00元（刘子轩）,交易后余额1929.84【中国银行】"
+        let parsed = try XCTUnwrap(CaptureParser.parseBankSMS(text, now: now))
+
+        XCTAssertEqual(parsed.amountCents, 100)
+        XCTAssertEqual(parsed.transactionKind, .income)
+        XCTAssertEqual(parsed.bankName, "中国银行")
+        XCTAssertEqual(parsed.channel, "银联")
+        XCTAssertEqual(parsed.cardLastFour, "1833")
+        XCTAssertEqual(parsed.merchant, "中国银行·刘子轩")
+        XCTAssertNotNil(parsed.date)
+    }
+
+    func testParseBankOfChinaOnlinePaymentTemplate() throws {
+        let text = "您的借记卡账户1833，于08月30日网上支付支取人民币1.00元,交易后余额1928.84【中国银行】"
+        let parsed = try XCTUnwrap(CaptureParser.parseBankSMS(text, now: now))
+
+        XCTAssertEqual(parsed.amountCents, 100)
+        XCTAssertEqual(parsed.transactionKind, .expense)
+        XCTAssertEqual(parsed.bankName, "中国银行")
+        XCTAssertEqual(parsed.cardLastFour, "1833")
+        XCTAssertEqual(parsed.merchant, "中国银行")
+        XCTAssertNotNil(parsed.date)
+    }
 }

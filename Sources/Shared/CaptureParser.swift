@@ -46,6 +46,7 @@ public enum CaptureParser {
 
     private static let dateTimePattern = "([0-9]{4})[年./\\-]([0-9]{1,2})[月./\\-]([0-9]{1,2})日?\\s*([0-9]{1,2}):([0-9]{2})"
     private static let shortDateTimePattern = "([0-9]{1,2})月([0-9]{1,2})日\\s*([0-9]{1,2}):([0-9]{2})"
+    private static let shortDatePattern = "([0-9]{1,2})月([0-9]{1,2})日"
 
     private static let banks = [
         "工商银行", "建设银行", "农业银行", "中国银行", "招商银行", "交通银行", "邮储银行",
@@ -125,6 +126,7 @@ public enum CaptureParser {
         let patterns = [
             "(?:尾号|末四位)[^0-9]{0,3}([0-9]{4})",
             "卡号后四位[^0-9]{0,3}([0-9]{4})",
+            "(?:借记卡/账户|借记卡账户|账户)[^0-9]{0,3}([0-9]{4})",
         ]
         for pattern in patterns {
             if let result = firstGroups(pattern: pattern, in: text, count: 1)?.first {
@@ -138,6 +140,7 @@ public enum CaptureParser {
         let patterns = [
             "(?:在|向)([^，。；,\\s]{2,24}?)(?:消费|支付|付款|扣款)",
             "商户[：:]?([^，。；,\\s]{2,24})",
+            "元[（(]([^）)]{2,24})[）)]",
         ]
         for pattern in patterns {
             guard let value = firstGroups(pattern: pattern, in: text, count: 1)?.first else {
@@ -175,6 +178,20 @@ public enum CaptureParser {
             comps.minute = Int(groups[3])
             if var date = calendar.date(from: comps) {
                 // 元旦附近收到上一年 12 月短信时，不能误判成未来日期。
+                if date > now.addingTimeInterval(86400) {
+                    date = calendar.date(byAdding: .year, value: -1, to: date) ?? date
+                }
+                if date >= now.addingTimeInterval(-86400 * 180) {
+                    return date
+                }
+            }
+        }
+        if let groups = firstGroups(pattern: shortDatePattern, in: text, count: 2) {
+            var comps = calendar.dateComponents([.year], from: now)
+            comps.month = Int(groups[0])
+            comps.day = Int(groups[1])
+            comps.hour = 12
+            if var date = calendar.date(from: comps) {
                 if date > now.addingTimeInterval(86400) {
                     date = calendar.date(byAdding: .year, value: -1, to: date) ?? date
                 }
