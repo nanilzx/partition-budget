@@ -8,7 +8,7 @@ final class CaptureInboxServiceTests: ServiceTestCase {
         let service = CaptureInboxService(context: context)
 
         let result = try service.enqueue(text: text)
-        guard case .inserted = result else {
+        guard case .insertedRecognized(_) = result else {
             return XCTFail("应写入一条待确认记录")
         }
 
@@ -45,12 +45,28 @@ final class CaptureInboxServiceTests: ServiceTestCase {
         XCTAssertEqual(try service.enqueue(text: text), .duplicate)
     }
 
-    func testUnrecognizedMessageIsNotPersisted() throws {
+    func testUnrecognizedNonemptyMessageIsPersistedForDiagnosis() throws {
         let result = try CaptureInboxService(context: context).enqueue(
             text: "【银行】验证码123456，请勿泄露。"
         )
 
-        XCTAssertEqual(result, .unrecognized)
-        XCTAssertEqual(try context.fetchCount(FetchDescriptor<CaptureInboxItem>()), 0)
+        guard case .insertedNeedsReview(_) = result else {
+            return XCTFail("无法解析的非空输入也应该进入待确认列表")
+        }
+        let item = try XCTUnwrap(context.fetch(FetchDescriptor<CaptureInboxItem>()).first)
+        XCTAssertFalse(item.isRecognized)
+        XCTAssertEqual(item.amountCents, 0)
+        XCTAssertEqual(item.rawText, "【银行】验证码123456，请勿泄露。")
+    }
+
+    func testEmptyShortcutInputCreatesVisibleDiagnostic() throws {
+        let result = try CaptureInboxService(context: context).enqueue(text: "  \n")
+
+        guard case .insertedNeedsReview(_) = result else {
+            return XCTFail("空输入也应该留下可见诊断")
+        }
+        let item = try XCTUnwrap(context.fetch(FetchDescriptor<CaptureInboxItem>()).first)
+        XCTAssertFalse(item.isRecognized)
+        XCTAssertTrue(item.rawText.contains("没有传入短信正文"))
     }
 }

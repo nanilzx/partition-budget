@@ -4,7 +4,7 @@ import SwiftData
 
 /// 供 iOS「快捷指令」调用的入口：
 /// 配合“收到银行短信时运行”自动化，把短信内容交给 App 在后台解析并持久化。
-/// 在快捷指令 App 里选择本动作，并把“文本内容”设为收到的信息正文即可。
+/// 在快捷指令 App 里选择本动作，并把“短信正文”设为收到的信息正文即可。
 struct CaptureExpenseIntent: AppIntent {
     static let title: LocalizedStringResource = "识别消费（分区预算）"
     static let description = IntentDescription(
@@ -14,8 +14,10 @@ struct CaptureExpenseIntent: AppIntent {
     /// 短信自动化可以在后台完成收集；用户稍后在 App 的“待确认”中核对入账。
     static var openAppWhenRun: Bool { false }
 
-    @Parameter(title: "文本内容", requestValueDialog: "请提供要识别的短信或账单文本")
-    var content: String
+    /// 使用可选参数，避免个人自动化忘记绑定变量时停下来询问用户。
+    /// 空输入仍会写入一条可见诊断，告诉用户如何修正快捷指令。
+    @Parameter(title: "短信正文")
+    var content: String?
 
     static var parameterSummary: some ParameterSummary {
         Summary("识别消费：\(\.$content)")
@@ -25,15 +27,15 @@ struct CaptureExpenseIntent: AppIntent {
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let context = ModelContext(AppModelContainer.shared)
         switch try CaptureInboxService(context: context).enqueue(
-            text: content,
+            text: content ?? "",
             source: "快捷指令·银行短信"
         ) {
-        case .inserted:
+        case .insertedRecognized(_):
             return .result(dialog: "已识别并加入分区预算的待确认列表")
+        case .insertedNeedsReview(_):
+            return .result(dialog: "已收到短信，但未完整识别；请在分区预算的待确认列表中检查")
         case .duplicate:
             return .result(dialog: "这条银行短信已经识别过，不会重复添加")
-        case .unrecognized:
-            return .result(dialog: "未识别到有效交易，请检查传入的是短信正文")
         }
     }
 }

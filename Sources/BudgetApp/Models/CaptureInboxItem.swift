@@ -24,6 +24,8 @@ final class CaptureInboxItem {
     var rawText: String = ""
     var source: String = "银行短信"
     var confidence: Double = 0
+    var isRecognized: Bool = true
+    var recognitionMessage: String = ""
     var stateRaw: String = CaptureInboxState.pending.rawValue
     var createdAt: Date = Date()
     var processedAt: Date? = nil
@@ -52,22 +54,35 @@ final class CaptureInboxItem {
 
     init(
         fingerprint: String,
-        parsed: CaptureParser.Parsed,
+        parsed: CaptureParser.Parsed?,
         rawText: String,
         source: String
     ) {
         captureID = UUID()
         self.fingerprint = fingerprint
-        amountCents = parsed.amountCents
-        merchant = parsed.merchant
-        transactionKindRaw = parsed.transactionKind.rawValue
-        transactionDate = parsed.date ?? Date()
-        bankName = parsed.bankName
-        channel = parsed.channel
-        cardLastFour = parsed.cardLastFour ?? ""
         self.rawText = rawText
         self.source = source
-        confidence = parsed.confidence
+        if let parsed {
+            amountCents = parsed.amountCents
+            merchant = parsed.merchant
+            transactionKindRaw = parsed.transactionKind.rawValue
+            transactionDate = parsed.date ?? Date()
+            bankName = parsed.bankName
+            channel = parsed.channel
+            cardLastFour = parsed.cardLastFour ?? ""
+            confidence = parsed.confidence
+            isRecognized = true
+        } else {
+            amountCents = 0
+            merchant = "未识别的银行短信"
+            transactionKindRaw = CaptureParser.TransactionKind.expense.rawValue
+            transactionDate = Date()
+            confidence = 0
+            isRecognized = false
+            recognitionMessage = rawText.contains("没有传入短信正文")
+                ? "快捷指令未传入短信正文"
+                : "已收到输入，但未识别出交易金额或类型"
+        }
         stateRaw = CaptureInboxState.pending.rawValue
         createdAt = Date()
     }

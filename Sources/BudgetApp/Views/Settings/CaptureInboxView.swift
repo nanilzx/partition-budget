@@ -69,29 +69,45 @@ struct CaptureInboxView: View {
 
     private func inboxRow(_ item: CaptureInboxItem) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: item.transactionKind == .expense ? "arrow.up.circle.fill" : "arrow.down.circle.fill")
+            Image(systemName: inboxIcon(for: item))
                 .font(.title2)
-                .foregroundStyle(item.transactionKind == .expense ? Color.red : Color.green)
+                .foregroundStyle(inboxColor(for: item))
             VStack(alignment: .leading, spacing: 4) {
                 Text(item.merchant)
                     .font(.headline)
                     .foregroundStyle(.primary)
-                HStack(spacing: 6) {
-                    Text(item.transactionKind.title)
-                    if !item.cardLastFour.isEmpty {
-                        Text("尾号 \(item.cardLastFour)")
+                Group {
+                    if item.isRecognized {
+                        HStack(spacing: 6) {
+                            Text(item.transactionKind.title)
+                            if !item.cardLastFour.isEmpty {
+                                Text("尾号 \(item.cardLastFour)")
+                            }
+                            Text(item.transactionDate, format: .dateTime.month().day().hour().minute())
+                        }
+                    } else {
+                        Text(item.recognitionMessage)
                     }
-                    Text(item.transactionDate, format: .dateTime.month().day().hour().minute())
                 }
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(item.isRecognized ? Color.secondary : Color.orange)
             }
             Spacer()
-            Text(Money(cents: item.amountCents).displayText)
+            Text(item.isRecognized ? Money(cents: item.amountCents).displayText : "待填写")
                 .font(.headline.monospacedDigit())
-                .foregroundStyle(item.transactionKind == .expense ? Color.primary : Color.green)
+                .foregroundStyle(item.isRecognized ? Color.primary : Color.orange)
         }
         .contentShape(Rectangle())
+    }
+
+    private func inboxIcon(for item: CaptureInboxItem) -> String {
+        if !item.isRecognized { return "questionmark.circle.fill" }
+        return item.transactionKind == .expense ? "arrow.up.circle.fill" : "arrow.down.circle.fill"
+    }
+
+    private func inboxColor(for item: CaptureInboxItem) -> Color {
+        if !item.isRecognized { return .orange }
+        return item.transactionKind == .expense ? .red : .green
     }
 
     private func markRecorded(_ item: CaptureInboxItem) {
