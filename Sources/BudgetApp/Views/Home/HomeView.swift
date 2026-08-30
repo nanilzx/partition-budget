@@ -108,7 +108,7 @@ struct HomeView: View {
     }
 
     /// 顶部：月份切换（玻璃容器）+ 「本月还可使用」大数字焦点，浮在内容之上。
-    /// List 已为分组内容提供统一的左右边距；这里不再重复缩进，以便和下方分组等宽。
+    /// List 已为分组内容提供统一的左右边距；行内左右必须为 0，避免再次缩进后比下方卡片窄。
     private var heroSection: some View {
         Section {
             // 用真正的 Button（而非 onTapGesture）：List 行内手势会互相抢占导致点按不灵
@@ -138,13 +138,14 @@ struct HomeView: View {
                             .foregroundStyle(.tertiary)
                     }
                 }
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 20)
+                .frame(maxWidth: .infinity, minHeight: 210, alignment: .topLeading)
                 .dsGlass(.regular, in: RoundedRectangle(cornerRadius: DS.glassCornerRadius))
             }
             .buttonStyle(.plain)
             .listRowBackground(Color.clear)
-            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+            .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 10, trailing: 0))
         }
     }
 
