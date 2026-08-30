@@ -121,7 +121,7 @@ struct BudgetView: View {
         } header: {
             Text("本月预算（\(month.title)）")
         } footer: {
-            Text("未分配 = 本月收入 − 已分配。长按首页的分区卡片可以进入「分配本月预算」。")
+            Text("点按首页顶部卡片进入「分配本月预算」。未分配 = 本月收入 − 已分配。")
         }
     }
 

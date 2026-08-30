@@ -47,7 +47,7 @@ struct CategoryFormSheet: View {
                 } header: {
                     Text("预算设置")
                 } footer: {
-                    Text("余额结转：本月没用完的预算自动加到下个月。储蓄类分区不计入日常可花金额。每月预算在「分配」页设置（长按首页分区卡片进入）。")
+                    Text("余额结转：本月没用完的预算自动加到下个月。储蓄类分区不计入日常可花金额。每月预算在「分配」页设置（首页顶部卡片点按进入）。")
                 }
                 if let errorMessage {
                     Section {

@@ -136,6 +136,12 @@ struct HomeView: View {
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
             .dsGlass(.regular, in: RoundedRectangle(cornerRadius: DS.glassCornerRadius))
+            .contentShape(Rectangle())
+            .onTapGesture {
+                // 点按顶部卡片 → 底部弹出「分配本月预算」（与统计页同款动画）
+                DS.Haptic.tap()
+                showingAllocation = true
+            }
             .padding(.vertical, 6)
             .listRowBackground(Color.clear)
             .listRowInsets(EdgeInsets())
@@ -202,14 +208,6 @@ struct HomeView: View {
                 } label: {
                     BudgetCategoryRowView(card: card)
                 }
-                .contextMenu {
-                    Button {
-                        showingAllocation = true
-                        DS.Haptic.tap()
-                    } label: {
-                        Label("分配本月预算", systemImage: "slider.horizontal.3")
-                    }
-                }
             }
         }
     }
@@ -231,14 +229,6 @@ struct HomeView: View {
                             }
                         } label: {
                             BudgetCategoryRowView(card: card)
-                        }
-                        .contextMenu {
-                            Button {
-                                showingAllocation = true
-                                DS.Haptic.tap()
-                            } label: {
-                                Label("分配本月预算", systemImage: "slider.horizontal.3")
-                            }
                         }
                     }
                 }
