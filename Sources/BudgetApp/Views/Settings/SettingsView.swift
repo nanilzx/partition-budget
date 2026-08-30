@@ -6,6 +6,9 @@ import UniformTypeIdentifiers
 struct SettingsView: View {
     @Environment(\.modelContext) private var context
 
+    @Query(filter: #Predicate<CaptureInboxItem> { $0.stateRaw == "pending" })
+    private var pendingCaptures: [CaptureInboxItem]
+
     @State private var exportDocument: BudgetBackupDocument?
     @State private var showingExporter = false
     @State private var showingImporter = false
@@ -29,6 +32,27 @@ struct SettingsView: View {
 
                 Section {
                     NavigationLink {
+                        AutomationSetupView()
+                    } label: {
+                        Label("设置银行短信自动化", systemImage: "bolt.badge.clock")
+                    }
+                    NavigationLink {
+                        CaptureInboxView()
+                    } label: {
+                        HStack {
+                            Label("银行短信待确认", systemImage: "text.badge.checkmark")
+                            Spacer()
+                            if !pendingCaptures.isEmpty {
+                                Text("\(pendingCaptures.count)")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 7)
+                                    .padding(.vertical, 3)
+                                    .background(.red, in: Capsule())
+                            }
+                        }
+                    }
+                    NavigationLink {
                         RulesListView()
                     } label: {
                         Label("自定义分类规则", systemImage: "person.badge.shield.checkmark")
@@ -43,9 +67,9 @@ struct SettingsView: View {
                     }
                     comingSoonRow("AI 智能识别（后续批次）", systemImage: "sparkles")
                 } header: {
-                    Text("智能分类")
+                    Text("自动记账")
                 } footer: {
-                    Text("银行短信自动记账：在快捷指令 App 新建自动化 → 触发条件选「信息」并填银行短信号码 → 添加动作搜「分区预算」→ 选「识别消费（分区预算）」→ 把文本参数设为「信息内容」。若搜不到动作，请确认已安装最新版并重启一次手机。")
+                    Text("在快捷指令 App 新建个人自动化：触发条件选「信息」并填写银行号码 → 选择“立即运行” → 添加“识别消费”动作 → 将“文本内容”设为收到的信息正文。识别结果会先进入待确认列表。")
                 }
 
                 Section {

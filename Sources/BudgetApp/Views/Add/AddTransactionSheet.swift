@@ -6,6 +6,7 @@ import SwiftData
 struct AddTransactionSheet: View {
     var editingTransaction: Transaction? = nil
     var capture: CapturePrefill? = nil
+    var onSaved: (() -> Void)? = nil
 
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
@@ -29,7 +30,7 @@ struct AddTransactionSheet: View {
 
     private var title: String {
         if editingTransaction != nil { return "编辑记录" }
-        if capture != nil { return "确认消费" }
+        if capture != nil { return "确认短信记录" }
         return "记一笔"
     }
 
@@ -58,6 +59,16 @@ struct AddTransactionSheet: View {
                     }
                 }
                 amountSection
+                if let capture, !capture.rawText.isEmpty {
+                    Section("识别来源") {
+                        Text(capture.rawText)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .textSelection(.enabled)
+                    } footer: {
+                        Text("请核对金额、类型和分区，确认后才会计入预算。")
+                    }
+                }
                 if model.isIncome {
                     incomeSection
                 } else {
@@ -126,8 +137,7 @@ struct AddTransactionSheet: View {
                 Button("仍然记录（余额将为负）") {
                     do {
                         try model.save(context: context)
-                        DS.Haptic.success()
-                        dismiss()
+                        finishSaving()
                     } catch {
                         saveError = error.localizedDescription
                     }
@@ -138,8 +148,7 @@ struct AddTransactionSheet: View {
                 Button("增加本月预算") {
                     do {
                         try model.saveWithBudgetBoost(context: context)
-                        DS.Haptic.success()
-                        dismiss()
+                        finishSaving()
                     } catch {
                         saveError = error.localizedDescription
                     }
@@ -157,8 +166,7 @@ struct AddTransactionSheet: View {
                 ) {
                     do {
                         try model.save(context: context)
-                        DS.Haptic.success()
-                        dismiss()
+                        finishSaving()
                     } catch {
                         saveError = error.localizedDescription
                     }
@@ -277,11 +285,16 @@ struct AddTransactionSheet: View {
                 return
             }
             try model.save(context: context)
-            DS.Haptic.success()
-            dismiss()
+            finishSaving()
         } catch {
             saveError = error.localizedDescription
         }
+    }
+
+    private func finishSaving() {
+        onSaved?()
+        DS.Haptic.success()
+        dismiss()
     }
 }
 

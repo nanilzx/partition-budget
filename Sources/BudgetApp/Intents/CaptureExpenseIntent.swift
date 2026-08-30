@@ -1,16 +1,18 @@
 import AppIntents
 import Foundation
+import SwiftData
 
 /// 供 iOS「快捷指令」调用的入口：
-/// 配合「收到银行短信时运行」自动化，把短信内容交给 App 解析并弹出记账确认。
-/// 在快捷指令 App 里选择本指令，并把「信息内容」设为参数即可。
+/// 配合“收到银行短信时运行”自动化，把短信内容交给 App 在后台解析并持久化。
+/// 在快捷指令 App 里选择本动作，并把“文本内容”设为收到的信息正文即可。
 struct CaptureExpenseIntent: AppIntent {
     static let title: LocalizedStringResource = "识别消费（分区预算）"
     static let description = IntentDescription(
-        "把银行短信或账单文本交给分区预算，自动识别金额并弹出记账确认。"
+        "把银行短信交给分区预算，在后台识别并加入待确认列表。"
     )
 
-    static var openAppWhenRun: Bool { true }
+    /// 短信自动化可以在后台完成收集；用户稍后在 App 的“待确认”中核对入账。
+    static var openAppWhenRun: Bool { false }
 
     @Parameter(title: "文本内容", requestValueDialog: "请提供要识别的短信或账单文本")
     var content: String
@@ -20,9 +22,19 @@ struct CaptureExpenseIntent: AppIntent {
     }
 
     @MainActor
-    func perform() async throws -> some IntentResult {
-        CaptureIntake.shared.ingestText(content, source: "快捷指令")
-        return .result()
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        let context = ModelContext(AppModelContainer.shared)
+        switch try CaptureInboxService(context: context).enqueue(
+            text: content,
+            source: "快捷指令·银行短信"
+        ) {
+        case .inserted:
+            return .result(dialog: "已识别并加入分区预算的待确认列表")
+        case .duplicate:
+            return .result(dialog: "这条银行短信已经识别过，不会重复添加")
+        case .unrecognized:
+            return .result(dialog: "未识别到有效交易，请检查传入的是短信正文")
+        }
     }
 }
 

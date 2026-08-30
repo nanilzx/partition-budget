@@ -26,6 +26,7 @@ class ServiceTestCase: XCTestCase {
             ClassificationRule.self,
             Account.self,
             SavingGoal.self,
+            CaptureInboxItem.self,
         ])
         container = try ModelContainer(
             for: schema,

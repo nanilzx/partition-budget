@@ -5,6 +5,9 @@ struct RootTabView: View {
     @Environment(AppRouter.self) private var router
     @Environment(\.modelContext) private var context
 
+    @Query(filter: #Predicate<CaptureInboxItem> { $0.stateRaw == "pending" })
+    private var pendingCaptures: [CaptureInboxItem]
+
     var body: some View {
         @Bindable var router = router
         TabView(selection: $router.selectedTab) {
@@ -20,6 +23,7 @@ struct RootTabView: View {
             SettingsView()
                 .tabItem { Label("我的", systemImage: "gearshape.fill") }
                 .tag(AppTab.settings)
+                .badge(pendingCaptures.count)
         }
         .task {
             // 首次启动写入默认分区；每次启动惰性生成当月预算（含结转）
@@ -29,12 +33,6 @@ struct RootTabView: View {
             } catch {
                 // 数据库异常时不阻塞 App 启动，界面呈现空状态
             }
-        }
-        .sheet(item: Binding(
-            get: { CaptureIntake.shared.pending },
-            set: { CaptureIntake.shared.pending = $0 }
-        )) { prefill in
-            AddTransactionSheet(capture: prefill)
         }
     }
 }

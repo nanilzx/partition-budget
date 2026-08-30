@@ -258,6 +258,8 @@ enum BackupService {
     }
 
     static func wipe(context: ModelContext) throws {
+        let captures = try context.fetch(FetchDescriptor<CaptureInboxItem>())
+        captures.forEach(context.delete)
         let transactions = try context.fetch(FetchDescriptor<Transaction>())
         transactions.forEach(context.delete)
         let adjustments = try context.fetch(FetchDescriptor<BudgetAdjustment>())

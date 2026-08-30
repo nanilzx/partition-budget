@@ -51,10 +51,10 @@ final class AddTransactionModel {
         userPickedCategory = true
     }
 
-    /// 截图/短信识别结果的预填：不锁定分类，让推荐机制自动选。
+    /// 银行短信识别结果的预填：不锁定分类，让推荐机制自动选择。
     func load(capture: CapturePrefill) {
         editing = nil
-        isIncome = false
+        isIncome = capture.transactionType == .income
         amountString = Money(cents: capture.amountCents).inputText
         merchantText = capture.merchant
         note = ""
