@@ -60,11 +60,13 @@ struct AddTransactionSheet: View {
                 }
                 amountSection
                 if let capture, !capture.rawText.isEmpty {
-                    Section("识别来源") {
+                    Section {
                         Text(capture.rawText)
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                             .textSelection(.enabled)
+                    } header: {
+                        Text("识别来源")
                     } footer: {
                         Text("请核对金额、类型和分区，确认后才会计入预算。")
                     }
