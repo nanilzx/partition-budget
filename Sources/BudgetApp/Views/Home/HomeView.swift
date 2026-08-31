@@ -23,6 +23,8 @@ struct HomeView: View {
     @State private var selectedMonth = BudgetMonth.current
     @State private var showingAddSheet = false
     @State private var showingAllocation = false
+    @AppStorage(AppPreferences.fullGlassCardsEnabled)
+    private var fullGlassCardsEnabled = false
 
     private var monthTransactions: [Transaction] {
         allTransactions.filter { $0.year == selectedMonth.year && $0.month == selectedMonth.month }
@@ -204,18 +206,7 @@ struct HomeView: View {
             transactions: monthTransactions,
             savingOnly: false
         )
-        return Section("预算分区") {
-            ForEach(cards) { card in
-                NavigationLink {
-                    if let category = categories.first(where: { $0.categoryID == card.categoryID }) {
-                        BudgetDetailView(category: category, month: selectedMonth)
-                    }
-                } label: {
-                    BudgetCategoryRowView(card: card)
-                }
-            }
-        }
-        .dsGlassRowCard()
+        return categorySection(title: "预算分区", cards: cards)
     }
 
     private var savingSection: some View {
@@ -227,20 +218,60 @@ struct HomeView: View {
         )
         return Group {
             if !cards.isEmpty {
-                Section("储蓄") {
-                    ForEach(cards) { card in
-                        NavigationLink {
-                            if let category = categories.first(where: { $0.categoryID == card.categoryID }) {
-                                BudgetDetailView(category: category, month: selectedMonth)
-                            }
-                        } label: {
-                            BudgetCategoryRowView(card: card)
+                categorySection(title: "储蓄", cards: cards)
+            }
+        }
+    }
+
+    /// 玻璃模式下整组只生成一层玻璃，避免相邻行的材质边缘叠加成双线，
+    /// 同时让外轮廓与顶部月份卡片使用完全相同的形状和圆角。
+    @ViewBuilder
+    private func categorySection(title: String, cards: [CategoryCardModel]) -> some View {
+        Section(title) {
+            if fullGlassCardsEnabled {
+                VStack(spacing: 0) {
+                    ForEach(Array(cards.enumerated()), id: \.element.id) { index, card in
+                        categoryLink(for: card, showsChevron: true)
+
+                        if index < cards.count - 1 {
+                            Divider()
+                                .padding(.horizontal, 20)
                         }
                     }
                 }
-                .dsGlassRowCard()
+                .frame(maxWidth: .infinity)
+                .dsGlass(.regular, in: RoundedRectangle(cornerRadius: DS.glassCornerRadius))
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets())
+                .listRowSeparator(.hidden)
+            } else {
+                ForEach(cards) { card in
+                    categoryLink(for: card, showsChevron: false)
+                }
             }
         }
+    }
+
+    private func categoryLink(for card: CategoryCardModel, showsChevron: Bool) -> some View {
+        NavigationLink {
+            if let category = categories.first(where: { $0.categoryID == card.categoryID }) {
+                BudgetDetailView(category: category, month: selectedMonth)
+            }
+        } label: {
+            HStack(spacing: 12) {
+                BudgetCategoryRowView(card: card)
+                if showsChevron {
+                    Image(systemName: "chevron.right")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, showsChevron ? 20 : 0)
+            .padding(.vertical, showsChevron ? 14 : 0)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     private var emptyState: some View {
