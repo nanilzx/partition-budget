@@ -159,7 +159,7 @@ struct TransactionsView: View {
         List {
             scopeSection
             Section {
-                ForEach(filtered) { txn in
+                ForEach(Array(filtered.enumerated()), id: \.element.id) { index, txn in
                     TransactionRowView(transaction: txn, categories: categories, accounts: accounts) {
                         editing = txn
                     }
@@ -195,8 +195,8 @@ struct TransactionsView: View {
                             Label("删除", systemImage: "trash")
                         }
                     }
+                    .dsGlassRowCard(position: .init(index: index, count: filtered.count))
                 }
-                .dsGlassRowCard()
             } header: {
                 HStack {
                     Text("共 \(filtered.count) 笔")
@@ -213,8 +213,8 @@ struct TransactionsView: View {
                     Text("没有符合条件的记录")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
+                        .dsGlassRowCard()
                 }
-                .dsGlassRowCard()
             }
         }
         .listStyle(.insetGrouped)

@@ -242,7 +242,7 @@ struct HomeView: View {
                 .frame(maxWidth: .infinity)
                 .dsGlass(.regular, in: RoundedRectangle(cornerRadius: DS.glassCornerRadius))
                 .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets())
+                .listRowInsets(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
                 .listRowSeparator(.hidden)
             } else {
                 ForEach(cards) { card in

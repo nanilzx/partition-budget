@@ -40,14 +40,14 @@ struct AccountListView: View {
                         Text(Money(cents: netWorthCents).displayText)
                             .fontWeight(.semibold)
                     }
+                    .dsGlassRowCard()
                 } footer: {
                     Text("余额 = 期初余额 + 关联交易（收入加、支出减）。预算是规划，账户是实际的钱，两者分开统计。")
                         .listRowBackground(Color.clear)
                 }
-                .dsGlassRowCard()
             }
             Section {
-                ForEach(accounts) { account in
+                ForEach(Array(accounts.enumerated()), id: \.element.id) { index, account in
                     Button {
                         editing = account
                     } label: {
@@ -61,12 +61,12 @@ struct AccountListView: View {
                             Label("删除", systemImage: "trash")
                         }
                     }
+                    .dsGlassRowCard(position: .init(index: index, count: accounts.count))
                 }
             } footer: {
                 Text("删除账户只会解绑交易，消费记录会完整保留。")
                     .listRowBackground(Color.clear)
             }
-            .dsGlassRowCard()
         }
         .dsGlassListSurface()
         .navigationTitle("资金账户")

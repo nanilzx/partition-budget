@@ -17,7 +17,7 @@ struct RulesListView: View {
     var body: some View {
         List {
             Section {
-                ForEach(rules) { rule in
+                ForEach(Array(rules.enumerated()), id: \.element.id) { index, rule in
                     HStack(spacing: 10) {
                         Text(rule.keyword)
                             .font(.body)
@@ -44,6 +44,7 @@ struct RulesListView: View {
                             Label("删除", systemImage: "trash")
                         }
                     }
+                    .dsGlassRowCard(position: .init(index: index, count: rules.count))
                 }
             } header: {
                 Text("自定义规则")
@@ -51,7 +52,6 @@ struct RulesListView: View {
                 Text("规则优先级最高：输入内容命中关键词时，永远推荐到规则指定的分区，高于历史记录和内置词库。你在记账时手动纠正分类也会自动生成规则。")
                     .listRowBackground(Color.clear)
             }
-            .dsGlassRowCard()
         }
         .dsGlassListSurface()
         .navigationTitle("自定义分类规则")

@@ -69,29 +69,30 @@ struct BudgetDetailView: View {
                     progressBar
                 }
                 .padding(.vertical, 4)
+                .dsGlassRowCard()
             }
-            .dsGlassRowCard()
             Section("最近消费") {
                 if recent.isEmpty {
                     Text("这个分区本月还没有消费记录")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
+                        .dsGlassRowCard()
                 }
-                ForEach(recent) { txn in
+                ForEach(Array(recent.enumerated()), id: \.element.id) { index, txn in
                     TransactionRowView(transaction: txn, categories: [category]) {
                         editing = txn
                     }
+                    .dsGlassRowCard(position: .init(index: index, count: recent.count))
                 }
             }
-            .dsGlassRowCard()
             Section {
                 Button {
                     router.selectedTab = .transactions
                 } label: {
                     Label("查看全部记录", systemImage: "list.bullet")
                 }
+                .dsGlassRowCard()
             }
-            .dsGlassRowCard()
         }
         .dsGlassListSurface()
         .navigationTitle(category.name)

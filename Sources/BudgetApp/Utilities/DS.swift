@@ -41,6 +41,34 @@ enum DS {
         /// 轻微染色玻璃：用于需要一点分类色强调的控件
         case tinted(Color)
     }
+
+    /// List 分区中一行所处的位置。相邻行共享同一块玻璃时，内部边缘不能重复绘制。
+    enum GlassRowPosition: Equatable {
+        case single
+        case first
+        case middle
+        case last
+
+        init(index: Int, count: Int) {
+            if count <= 1 {
+                self = .single
+            } else if index == 0 {
+                self = .first
+            } else if index == count - 1 {
+                self = .last
+            } else {
+                self = .middle
+            }
+        }
+
+        fileprivate var extendsAbove: Bool {
+            self == .middle || self == .last
+        }
+
+        fileprivate var extendsBelow: Bool {
+            self == .first || self == .middle
+        }
+    }
 }
 
 enum AppPreferences {
@@ -49,22 +77,45 @@ enum AppPreferences {
 
 private struct GlassRowCardModifier: ViewModifier {
     @AppStorage(AppPreferences.fullGlassCardsEnabled) private var isEnabled = false
+    let position: DS.GlassRowPosition
 
     @ViewBuilder
     func body(content: Content) -> some View {
         if isEnabled {
-            if #available(iOS 26.0, *) {
-                content.listRowBackground(
-                    Rectangle()
-                        .fill(.clear)
-                        .glassEffect(.regular, in: Rectangle())
-                )
-            } else {
-                content.listRowBackground(Rectangle().fill(.regularMaterial))
-            }
+            content.listRowBackground(JoinedGlassRowBackground(position: position))
         } else {
             content
         }
+    }
+}
+
+/// 把相邻 List 行的玻璃形状向内部接缝之外延伸，只显示整个分区的外轮廓。
+/// 外边缘向内留 1pt，避免 Liquid Glass 的高光被 List 行裁剪掉。
+private struct JoinedGlassRowBackground: View {
+    let position: DS.GlassRowPosition
+
+    var body: some View {
+        GeometryReader { proxy in
+            let extensionLength = DS.glassCornerRadius + 10
+            let top = position.extendsAbove ? -extensionLength : 1
+            let bottom = position.extendsBelow ? -extensionLength : 1
+            let width = max(proxy.size.width - 2, 0)
+            let height = max(proxy.size.height - top - bottom, 0)
+
+            Group {
+                if #available(iOS 26.0, *) {
+                    RoundedRectangle(cornerRadius: DS.glassCornerRadius)
+                        .fill(.clear)
+                        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.glassCornerRadius))
+                } else {
+                    RoundedRectangle(cornerRadius: DS.glassCornerRadius)
+                        .fill(.regularMaterial)
+                }
+            }
+            .frame(width: width, height: height)
+            .offset(x: 1, y: top)
+        }
+        .clipped()
     }
 }
 
@@ -135,9 +186,9 @@ extension View {
         }
     }
 
-    /// 列表行/分区的玻璃卡片底色：隐藏系统白底，行底改为半透明材质。
-    func dsGlassRowCard() -> some View {
-        modifier(GlassRowCardModifier())
+    /// 列表分区的连续玻璃底色；根据行位置隐藏内部玻璃边缘，避免接缝双线。
+    func dsGlassRowCard(position: DS.GlassRowPosition = .single) -> some View {
+        modifier(GlassRowCardModifier(position: position))
     }
 
     /// 配套：隐藏 List 自带的实底背景，让玻璃材质有内容可透。

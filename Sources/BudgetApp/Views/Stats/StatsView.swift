@@ -89,17 +89,21 @@ struct StatsView: View {
                 Text(Money(cents: monthExpenseCents).displayText)
                     .fontWeight(.semibold)
             }
+            .dsGlassRowCard(position: .first)
             LabeledContent("\(month.month)月收入") {
                 Text(Money(cents: monthIncomeCents).displayText)
                     .foregroundStyle(.green)
             }
+            .dsGlassRowCard(position: .middle)
             LabeledContent("结余") {
                 Text(Money(cents: monthIncomeCents - monthExpenseCents).displayText)
                     .foregroundStyle(monthIncomeCents - monthExpenseCents < 0 ? Color.red : Color.primary)
             }
+            .dsGlassRowCard(position: .middle)
             LabeledContent("日均支出") {
                 Text(Money(cents: dailyAverageCents).displayText)
             }
+            .dsGlassRowCard(position: largest == nil && previousExpenseCents <= 0 ? .last : .middle)
             if let largest {
                 VStack(alignment: .leading, spacing: 2) {
                     LabeledContent("最大单笔") {
@@ -109,6 +113,7 @@ struct StatsView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+                .dsGlassRowCard(position: previousExpenseCents > 0 ? .middle : .last)
             }
             if previousExpenseCents > 0 {
                 LabeledContent("较上月") {
@@ -118,11 +123,11 @@ struct StatsView: View {
                     )
                     .foregroundStyle(delta > 0 ? Color.red : Color.green)
                 }
+                .dsGlassRowCard(position: .last)
             }
         } header: {
             Text("\(month.title)概览")
         }
-        .dsGlassRowCard()
     }
 
     private var dailyChartSection: some View {
@@ -156,8 +161,9 @@ struct StatsView: View {
                 Text("本月还没有分区消费")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
+                    .dsGlassRowCard()
             }
-            ForEach(categoryTotals) { item in
+            ForEach(Array(categoryTotals.enumerated()), id: \.element.id) { index, item in
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: 8) {
                         if let category = categories.first(where: { $0.categoryID == item.categoryID }) {
@@ -187,10 +193,10 @@ struct StatsView: View {
                     .frame(height: DS.barHeight)
                 }
                 .padding(.vertical, 2)
+                .dsGlassRowCard(position: .init(index: index, count: categoryTotals.count))
             }
         } header: {
             Text("分区消费排行")
         }
-        .dsGlassRowCard()
     }
 }

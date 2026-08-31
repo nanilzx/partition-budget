@@ -27,15 +27,16 @@ struct SettingsView: View {
                     } label: {
                         Label("资金账户管理", systemImage: "creditcard")
                     }
+                    .dsGlassRowCard()
                 } header: {
                     Text("账户")
                 } footer: {
                     Text("实际的钱（微信、支付宝、银行卡…）与预算分开管理，支持计入总资产。")
                 }
-                .dsGlassRowCard()
 
                 Section {
                     Toggle("全部卡片使用玻璃效果", isOn: $fullGlassCardsEnabled)
+                        .dsGlassRowCard()
                 } header: {
                     Text("外观")
                 } footer: {
@@ -45,7 +46,6 @@ struct SettingsView: View {
                             : "当前仅首页顶部卡片使用液态玻璃，其余保持系统原生平面样式。"
                     )
                 }
-                .dsGlassRowCard()
 
                 Section {
                     NavigationLink {
@@ -53,6 +53,7 @@ struct SettingsView: View {
                     } label: {
                         Label("设置银行短信自动化", systemImage: "bolt.badge.clock")
                     }
+                    .dsGlassRowCard(position: .first)
                     NavigationLink {
                         CaptureInboxView()
                     } label: {
@@ -69,26 +70,30 @@ struct SettingsView: View {
                             }
                         }
                     }
+                    .dsGlassRowCard(position: .middle)
                     NavigationLink {
                         RulesListView()
                     } label: {
                         Label("自定义分类规则", systemImage: "person.badge.shield.checkmark")
                     }
+                    .dsGlassRowCard(position: .middle)
                     LabeledContent("内置词库") {
                         Text("\(BuiltinClassificationRules.rules.count) 条关键词")
                     }
+                    .dsGlassRowCard(position: .middle)
                     if let shortcutsURL = URL(string: "shortcuts://") {
                         Link(destination: shortcutsURL) {
                             Label("打开「快捷指令」App", systemImage: "arrow.up.forward.app")
                         }
+                        .dsGlassRowCard(position: .middle)
                     }
                     comingSoonRow("AI 智能识别（后续批次）", systemImage: "sparkles")
+                        .dsGlassRowCard(position: .last)
                 } header: {
                     Text("自动记账")
                 } footer: {
                     Text("在快捷指令 App 新建个人自动化：触发条件选“信息”并填写银行号码 → 选择“立即运行” → 添加“接收银行短信正文”操作。该操作会优先连接上一步收到的信息，识别结果进入待确认列表。")
                 }
-                .dsGlassRowCard()
 
                 Section {
                     Button {
@@ -96,29 +101,31 @@ struct SettingsView: View {
                     } label: {
                         Label("导出全部数据（JSON）", systemImage: "square.and.arrow.up")
                     }
+                    .dsGlassRowCard(position: .first)
                     Button {
                         showingImporter = true
                     } label: {
                         Label("从备份文件导入", systemImage: "square.and.arrow.down")
                     }
+                    .dsGlassRowCard(position: .last)
                 } header: {
                     Text("数据")
                 } footer: {
                     Text("数据全部保存在本机。建议定期导出 JSON 备份；导入会覆盖当前全部数据。")
                 }
-                .dsGlassRowCard()
 
                 Section {
                     LabeledContent("版本") {
                         Text(versionText)
                     }
+                    .dsGlassRowCard(position: .first)
                     LabeledContent("核心原则") {
                         Text("离线优先 · 数据本地")
                     }
+                    .dsGlassRowCard(position: .last)
                 } header: {
                     Text("关于")
                 }
-                .dsGlassRowCard()
             }
             .dsGlassListSurface()
             .navigationTitle("我的")

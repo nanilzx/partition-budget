@@ -58,8 +58,9 @@ struct SavingGoalListView: View {
                     Text("还没有储蓄目标。给自己立一个，比如「电脑基金」「旅行基金」。")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
+                        .dsGlassRowCard()
                 }
-                ForEach(goals) { goal in
+                ForEach(Array(goals.enumerated()), id: \.element.id) { index, goal in
                     Button {
                         editing = goal
                     } label: {
@@ -73,12 +74,12 @@ struct SavingGoalListView: View {
                             Label("删除", systemImage: "trash")
                         }
                     }
+                    .dsGlassRowCard(position: .init(index: index, count: goals.count))
                 }
             } footer: {
                 Text("进度来自对应储蓄分区的累积余额（含结转）。给储蓄分区设置每月默认预算，就能自动估算完成时间。")
                     .listRowBackground(Color.clear)
             }
-            .dsGlassRowCard()
         }
         .dsGlassListSurface()
         .navigationTitle("储蓄目标")

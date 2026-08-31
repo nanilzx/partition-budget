@@ -115,26 +115,29 @@ struct BudgetView: View {
             LabeledContent("本月收入") {
                 Text(Money(cents: incomeCents).displayText)
             }
+            .dsGlassRowCard(position: .first)
             LabeledContent("已分配") {
                 Text(Money(cents: currentBudget?.allocatedCents ?? 0).displayText)
             }
+            .dsGlassRowCard(position: .middle)
             LabeledContent("未分配") {
                 Text(Money(cents: unallocatedCents).displayText)
                     .foregroundStyle(unallocatedCents < 0 ? Color.red : Color.primary)
             }
+            .dsGlassRowCard(position: .last)
         } header: {
             Text("本月预算（\(month.title)）")
         } footer: {
             Text("点按首页顶部卡片进入「分配本月预算」。未分配 = 本月收入 − 已分配。")
                 .listRowBackground(Color.clear)
         }
-        .dsGlassRowCard()
     }
 
     private var categorySection: some View {
         Section {
-            ForEach(categories) { category in
+            ForEach(Array(categories.enumerated()), id: \.element.id) { index, category in
                 categoryRow(category)
+                    .dsGlassRowCard(position: .init(index: index, count: categories.count))
             }
             .onMove(perform: moveCategories)
         } header: {
@@ -143,7 +146,6 @@ struct BudgetView: View {
             Text("长按拖动调整顺序；左滑可隐藏或删除（有消费记录的分区只能隐藏）。")
                 .listRowBackground(Color.clear)
         }
-        .dsGlassRowCard()
     }
 
     private var toolsSection: some View {
@@ -153,18 +155,19 @@ struct BudgetView: View {
             } label: {
                 Label("预算转移", systemImage: "arrow.left.arrow.right")
             }
+            .dsGlassRowCard(position: .first)
             NavigationLink {
                 SavingGoalListView()
             } label: {
                 Label("储蓄目标", systemImage: "target")
             }
+            .dsGlassRowCard(position: .last)
         } header: {
             Text("工具")
         } footer: {
             Text("在分区之间重新分配本月剩余额度；为储蓄分区设立目标并追踪进度。")
                 .listRowBackground(Color.clear)
         }
-        .dsGlassRowCard()
     }
 
     private func categoryRow(_ category: BudgetCategory) -> some View {
