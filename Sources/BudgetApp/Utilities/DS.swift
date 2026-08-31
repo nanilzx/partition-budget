@@ -99,7 +99,7 @@ extension View {
     /// 列表行/分区的玻璃卡片底色：隐藏系统白底，行底改为半透明材质。
     @ViewBuilder
     func dsGlassRowCard() -> some View {
-        self.listRowBackground(.regularMaterial)
+        self.listRowBackground(Rectangle().fill(.regularMaterial))
     }
 
     /// 配套：隐藏 List 自带的实底背景，让玻璃材质有内容可透。
