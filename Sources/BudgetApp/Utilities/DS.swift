@@ -55,24 +55,12 @@ private struct GlassRowCardModifier: ViewModifier {
         if isEnabled {
             if #available(iOS 26.0, *) {
                 content.listRowBackground(
-                    ZStack {
-                        Rectangle()
-                            .fill(.clear)
-                            .glassEffect(.regular, in: Rectangle())
-                        Rectangle()
-                            .fill(Color.accentColor.opacity(0.045))
-                        Rectangle()
-                            .strokeBorder(Color.primary.opacity(0.13), lineWidth: 0.6)
-                    }
+                    Rectangle()
+                        .fill(.clear)
+                        .glassEffect(.regular, in: Rectangle())
                 )
             } else {
-                content.listRowBackground(
-                    ZStack {
-                        Rectangle().fill(.regularMaterial)
-                        Rectangle().fill(Color.accentColor.opacity(0.04))
-                        Rectangle().strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5)
-                    }
-                )
+                content.listRowBackground(Rectangle().fill(.regularMaterial))
             }
         } else {
             content
