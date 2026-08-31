@@ -78,6 +78,7 @@ struct HomeView: View {
             dailySection
             savingSection
         }
+        .dsGlassListSurface()
         .dsMinimizeTabBarOnScroll()
         .navigationTitle("分区预算")
         .navigationBarTitleDisplayMode(.inline)
@@ -210,6 +211,7 @@ struct HomeView: View {
                 }
             }
         }
+        .dsGlassRowCard()
     }
 
     private var savingSection: some View {
@@ -232,6 +234,7 @@ struct HomeView: View {
                         }
                     }
                 }
+                .dsGlassRowCard()
             }
         }
     }

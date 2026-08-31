@@ -42,7 +42,9 @@ struct AccountListView: View {
                     }
                 } footer: {
                     Text("余额 = 期初余额 + 关联交易（收入加、支出减）。预算是规划，账户是实际的钱，两者分开统计。")
+                        .listRowBackground(Color.clear)
                 }
+                .dsGlassRowCard()
             }
             Section {
                 ForEach(accounts) { account in
@@ -62,8 +64,11 @@ struct AccountListView: View {
                 }
             } footer: {
                 Text("删除账户只会解绑交易，消费记录会完整保留。")
+                    .listRowBackground(Color.clear)
             }
+            .dsGlassRowCard()
         }
+        .dsGlassListSurface()
         .navigationTitle("资金账户")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

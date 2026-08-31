@@ -196,6 +196,7 @@ struct TransactionsView: View {
                         }
                     }
                 }
+                .dsGlassRowCard()
             } header: {
                 HStack {
                     Text("共 \(filtered.count) 笔")
@@ -213,9 +214,11 @@ struct TransactionsView: View {
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
+                .dsGlassRowCard()
             }
         }
         .listStyle(.insetGrouped)
+        .dsGlassListSurface()
     }
 
     private var scopeSection: some View {

@@ -67,6 +67,7 @@ struct StatsView: View {
                 dailyChartSection
                 categorySection
             }
+            .dsGlassListSurface()
             .navigationTitle("统计 · \(month.title)")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -118,6 +119,7 @@ struct StatsView: View {
         } header: {
             Text("本月概览")
         }
+        .dsGlassRowCard()
     }
 
     private var dailyChartSection: some View {
@@ -186,5 +188,6 @@ struct StatsView: View {
         } header: {
             Text("分区消费排行")
         }
+        .dsGlassRowCard()
     }
 }

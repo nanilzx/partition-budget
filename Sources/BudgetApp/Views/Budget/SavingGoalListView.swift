@@ -76,8 +76,11 @@ struct SavingGoalListView: View {
                 }
             } footer: {
                 Text("进度来自对应储蓄分区的累积余额（含结转）。给储蓄分区设置每月默认预算，就能自动估算完成时间。")
+                    .listRowBackground(Color.clear)
             }
+            .dsGlassRowCard()
         }
+        .dsGlassListSurface()
         .navigationTitle("储蓄目标")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

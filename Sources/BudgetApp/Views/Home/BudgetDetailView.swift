@@ -65,8 +65,8 @@ struct BudgetDetailView: View {
                     progressBar
                 }
                 .padding(.vertical, 4)
-                .listRowBackground(Color.clear)
             }
+            .dsGlassRowCard()
             Section("最近消费") {
                 if recent.isEmpty {
                     Text("这个分区本月还没有消费记录")
@@ -79,6 +79,7 @@ struct BudgetDetailView: View {
                     }
                 }
             }
+            .dsGlassRowCard()
             Section {
                 Button {
                     router.selectedTab = .transactions
@@ -86,7 +87,9 @@ struct BudgetDetailView: View {
                     Label("查看全部记录", systemImage: "list.bullet")
                 }
             }
+            .dsGlassRowCard()
         }
+        .dsGlassListSurface()
         .navigationTitle(category.name)
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $editing) { txn in

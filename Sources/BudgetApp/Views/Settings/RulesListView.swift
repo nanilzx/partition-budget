@@ -49,8 +49,11 @@ struct RulesListView: View {
                 Text("自定义规则")
             } footer: {
                 Text("规则优先级最高：输入内容命中关键词时，永远推荐到规则指定的分区，高于历史记录和内置词库。你在记账时手动纠正分类也会自动生成规则。")
+                    .listRowBackground(Color.clear)
             }
+            .dsGlassRowCard()
         }
+        .dsGlassListSurface()
         .navigationTitle("自定义分类规则")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
