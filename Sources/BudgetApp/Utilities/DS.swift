@@ -43,10 +43,61 @@ enum DS {
     }
 }
 
+enum AppPreferences {
+    static let fullGlassCardsEnabled = "fullGlassCardsEnabled"
+}
+
+private struct GlassRowCardModifier: ViewModifier {
+    @AppStorage(AppPreferences.fullGlassCardsEnabled) private var isEnabled = false
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if isEnabled {
+            if #available(iOS 26.0, *) {
+                content.listRowBackground(
+                    ZStack {
+                        Rectangle()
+                            .fill(.clear)
+                            .glassEffect(.regular, in: Rectangle())
+                        Rectangle()
+                            .fill(Color.accentColor.opacity(0.045))
+                        Rectangle()
+                            .strokeBorder(Color.primary.opacity(0.13), lineWidth: 0.6)
+                    }
+                )
+            } else {
+                content.listRowBackground(
+                    ZStack {
+                        Rectangle().fill(.regularMaterial)
+                        Rectangle().fill(Color.accentColor.opacity(0.04))
+                        Rectangle().strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5)
+                    }
+                )
+            }
+        } else {
+            content
+        }
+    }
+}
+
+private struct GlassListSurfaceModifier: ViewModifier {
+    @AppStorage(AppPreferences.fullGlassCardsEnabled) private var isEnabled = false
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if isEnabled {
+            content
+                .scrollContentBackground(.hidden)
+                .background(Color(.systemGroupedBackground))
+        } else {
+            content
+        }
+    }
+}
+
 extension View {
 
     /// Liquid Glass（iOS 26+ 官方 API）；旧系统回退 .thinMaterial。
-    /// 玻璃只用于导航/控件/浮层层级，内容列表不要整体套玻璃。
     @ViewBuilder
     func dsGlass(_ style: DS.Glass = .regular, in shape: some Shape = Capsule()) -> some View {
         if #available(iOS 26.0, *) {
@@ -97,15 +148,12 @@ extension View {
     }
 
     /// 列表行/分区的玻璃卡片底色：隐藏系统白底，行底改为半透明材质。
-    @ViewBuilder
     func dsGlassRowCard() -> some View {
-        self.listRowBackground(Rectangle().fill(.regularMaterial))
+        modifier(GlassRowCardModifier())
     }
 
     /// 配套：隐藏 List 自带的实底背景，让玻璃材质有内容可透。
-    @ViewBuilder
     func dsGlassListSurface() -> some View {
-        self.scrollContentBackground(.hidden)
-            .background(Color(.systemGroupedBackground))
+        modifier(GlassListSurfaceModifier())
     }
 }
