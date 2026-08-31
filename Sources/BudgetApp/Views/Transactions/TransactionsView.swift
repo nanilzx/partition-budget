@@ -121,7 +121,7 @@ struct TransactionsView: View {
                 TransactionFilterSheet(filter: $filter)
             }
             .sheet(isPresented: $showingStats) {
-                StatsView()
+                StatsView(month: selectedMonth)
             }
             .sheet(isPresented: $showingAddSheet) {
                 AddTransactionSheet()

@@ -12,6 +12,12 @@ final class BackupServiceTests: ServiceTestCase {
             name: "微信零钱", type: .wechat, icon: "iphone",
             openingBalanceCents: Money(yuan: 8000).cents, includeInNetWorth: true
         )
+        _ = try SavingGoalService(context: context).create(
+            name: "旅行基金",
+            categoryID: saving.categoryID,
+            targetCents: Money(yuan: 10_000).cents,
+            targetDate: date(2027, 8, 1)
+        )
         // 一笔转移 + 一笔消费 + 一条规则，覆盖全部导出类型
         try budgets.transfer(
             fromCategoryID: dining.categoryID,
@@ -36,18 +42,20 @@ final class BackupServiceTests: ServiceTestCase {
         decoder.dateDecodingStrategy = .iso8601
         let file = try decoder.decode(BackupService.BackupFile.self, from: data)
 
-        XCTAssertEqual(file.version, 1)
+        XCTAssertEqual(file.version, 2)
         XCTAssertEqual(file.categories.count, 2)
         XCTAssertEqual(file.transactions.count, 1)
         XCTAssertEqual(file.transfers.count, 1)
         XCTAssertEqual(file.rules.count, 1)
         XCTAssertEqual(file.accounts.count, 1)
+        XCTAssertEqual(file.savingGoals?.count, 1)
 
         // 覆盖导入后数据完整还原
         try BackupService.importReplace(data: data, context: context)
 
         XCTAssertEqual(try BudgetCategory.all(in: context).count, 2)
         XCTAssertEqual(try Account.all(in: context).count, 1)
+        XCTAssertEqual(try SavingGoal.all(in: context).count, 1)
         XCTAssertEqual(try months.monthTransactions(m).count, 1)
         XCTAssertEqual(try months.remainingCents(categoryID: dining.categoryID, month: m), remainingBefore)
 
@@ -63,6 +71,9 @@ final class BackupServiceTests: ServiceTestCase {
         // 转移台账也还原了
         let transfers = try context.fetch(FetchDescriptor<BudgetTransfer>())
         XCTAssertEqual(transfers.count, 1)
+        let restoredGoal = try XCTUnwrap(try SavingGoal.all(in: context).first)
+        XCTAssertEqual(restoredGoal.name, "旅行基金")
+        XCTAssertEqual(restoredGoal.targetCents, Money(yuan: 10_000).cents)
     }
 
     func testImportReplacesExistingData() throws {
@@ -102,5 +113,21 @@ final class BackupServiceTests: ServiceTestCase {
         // 导入失败不破坏现有数据
         XCTAssertEqual(try BudgetCategory.all(in: context).count, 1)
         XCTAssertEqual(try months.remainingCents(categoryID: dining.categoryID, month: m), 120000)
+    }
+
+    func testVersionOneBackupWithoutSavingGoalsStillImports() throws {
+        _ = try seedSampleData()
+        let versionTwoData = try BackupService.export(context: context)
+        var object = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: versionTwoData) as? [String: Any]
+        )
+        object["version"] = 1
+        object.removeValue(forKey: "savingGoals")
+        let versionOneData = try JSONSerialization.data(withJSONObject: object)
+
+        try BackupService.importReplace(data: versionOneData, context: context)
+
+        XCTAssertEqual(try BudgetCategory.all(in: context).count, 2)
+        XCTAssertEqual(try SavingGoal.all(in: context).count, 0)
     }
 }

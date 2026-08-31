@@ -3,6 +3,8 @@ import SwiftData
 
 /// 「分配预算」：把本月收入分配到各个分区（规格第十节）。
 struct AllocationView: View {
+    var month: BudgetMonth = .current
+
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
 
@@ -11,14 +13,14 @@ struct AllocationView: View {
 
     @Query private var items: [MonthlyBudgetItem]
 
+    @Query private var monthlyBudgets: [MonthlyBudget]
+
     @Query(sort: [SortDescriptor(\Transaction.date, order: .reverse)])
     private var allTransactions: [Transaction]
 
     @State private var amounts: [UUID: String] = [:]
     @State private var incomeString = ""
     @State private var errorMessage: String?
-
-    private let month = BudgetMonth.current
 
     private var allocatable: [BudgetCategory] {
         categories.filter { !$0.isHidden }
@@ -52,7 +54,20 @@ struct AllocationView: View {
     }
 
     private var totalAllocatedCents: Int64 {
-        parsedAmounts.values.reduce(Int64(0)) { $0 + $1 }
+        guard let budget = monthlyBudgets.first(where: {
+            $0.year == month.year && $0.month == month.month
+        }) else {
+            return parsedAmounts.values.reduce(Int64(0)) { $0 + $1 }
+        }
+        let visibleInitialDelta = allocatable.reduce(Int64(0)) { total, category in
+            let oldInitial = items.first {
+                $0.categoryID == category.categoryID
+                    && $0.year == month.year
+                    && $0.month == month.month
+            }?.initialCents ?? 0
+            return total + (parsedAmounts[category.categoryID] ?? 0) - oldInitial
+        }
+        return budget.allocatedCents + visibleInitialDelta
     }
 
     private var unallocatedCents: Int64 {
@@ -172,7 +187,11 @@ struct AllocationView: View {
                 if let existing = salaryIncome {
                     try transactionService.update(existing, cents: incomeCents, description: "工资")
                 } else {
-                    try transactionService.addIncome(cents: incomeCents, description: "工资", date: Date())
+                    try transactionService.addIncome(
+                        cents: incomeCents,
+                        description: "工资",
+                        date: representativeDate
+                    )
                 }
             }
             for category in allocatable {
@@ -187,5 +206,15 @@ struct AllocationView: View {
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    /// 历史月份新增工资时必须落在被编辑月份，不能使用今天的日期。
+    private var representativeDate: Date {
+        var components = DateComponents()
+        components.year = month.year
+        components.month = month.month
+        components.day = 1
+        components.hour = 12
+        return Calendar.current.date(from: components) ?? Date()
     }
 }

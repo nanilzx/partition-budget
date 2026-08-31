@@ -67,7 +67,7 @@ struct HomeView: View {
             }
         }
         .sheet(isPresented: $showingAddSheet) { AddTransactionSheet() }
-        .sheet(isPresented: $showingAllocation) { AllocationView() }
+        .sheet(isPresented: $showingAllocation) { AllocationView(month: selectedMonth) }
     }
 
     // MARK: - 主列表
@@ -114,7 +114,11 @@ struct HomeView: View {
                     showingAllocation = true
                 } label: {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("本月还可使用")
+                        Text(
+                            selectedMonth == BudgetMonth.current
+                                ? "本月还可使用"
+                                : "\(selectedMonth.month)月还可使用"
+                        )
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .padding(.top, 2)

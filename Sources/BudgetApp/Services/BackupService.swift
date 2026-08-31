@@ -92,8 +92,17 @@ enum BackupService {
         var sortOrder: Int
     }
 
+    struct BackupSavingGoal: Codable {
+        var id: UUID
+        var name: String
+        var categoryID: UUID
+        var targetCents: Int64
+        var targetDate: Date?
+        var createdAt: Date
+    }
+
     struct BackupFile: Codable {
-        var version: Int = 1
+        var version: Int = 2
         var exportedAt: Date = Date()
         var categories: [BackupCategory] = []
         var transactions: [BackupTransaction] = []
@@ -103,6 +112,8 @@ enum BackupService {
         var adjustments: [BackupAdjustment] = []
         var rules: [BackupRule] = []
         var accounts: [BackupAccount] = []
+        /// 可选字段用于兼容 v1 备份；v1 没有导出储蓄目标。
+        var savingGoals: [BackupSavingGoal]? = []
     }
 
     // MARK: - 导出
@@ -162,6 +173,16 @@ enum BackupService {
                 includeInNetWorth: a.includeInNetWorth, sortOrder: a.sortOrder
             ))
         }
+        for goal in try SavingGoal.all(in: context) {
+            file.savingGoals?.append(BackupSavingGoal(
+                id: goal.goalID,
+                name: goal.name,
+                categoryID: goal.categoryID,
+                targetCents: goal.targetCents,
+                targetDate: goal.targetDate,
+                createdAt: goal.createdAt
+            ))
+        }
 
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
@@ -181,85 +202,114 @@ enum BackupService {
             throw ServiceError.invalidBackupFile
         }
 
-        // 先清空现有数据，再按备份重建
-        try wipe(context: context)
+        do {
+            // 清空和重建放在同一个未保存事务中；任一步失败都回滚到导入前。
+            try stageWipe(context: context)
 
-        for c in file.categories {
-            let model = BudgetCategory(
-                name: c.name, icon: c.icon, colorHex: c.colorHex,
-                defaultMonthlyCents: c.defaultMonthlyCents,
-                carryOverEnabled: c.carryOverEnabled, isSavingCategory: c.isSavingCategory,
-                sortOrder: c.sortOrder, isHidden: c.isHidden
-            )
-            model.categoryID = c.id
-            context.insert(model)
+            for c in file.categories {
+                let model = BudgetCategory(
+                    name: c.name, icon: c.icon, colorHex: c.colorHex,
+                    defaultMonthlyCents: c.defaultMonthlyCents,
+                    carryOverEnabled: c.carryOverEnabled, isSavingCategory: c.isSavingCategory,
+                    sortOrder: c.sortOrder, isHidden: c.isHidden
+                )
+                model.categoryID = c.id
+                context.insert(model)
+            }
+            for a in file.accounts {
+                let model = Account(
+                    name: a.name, type: AccountType(rawValue: a.type) ?? .bank, icon: a.icon,
+                    openingBalanceCents: a.openingBalanceCents,
+                    includeInNetWorth: a.includeInNetWorth, sortOrder: a.sortOrder
+                )
+                model.accountID = a.id
+                context.insert(model)
+            }
+            for b in file.monthlyBudgets {
+                let model = MonthlyBudget(year: b.year, month: b.month)
+                model.monthlyBudgetID = b.id
+                model.allocatedCents = b.allocatedCents
+                context.insert(model)
+            }
+            for i in file.items {
+                let model = MonthlyBudgetItem(
+                    monthlyBudgetID: i.monthlyBudgetID, year: i.year, month: i.month,
+                    categoryID: i.categoryID, initialCents: i.initialCents, carryOverCents: i.carryOverCents
+                )
+                model.itemID = i.id
+                model.adjustedCents = i.adjustedCents
+                context.insert(model)
+            }
+            for t in file.transactions {
+                let model = Transaction(
+                    type: TransactionType(rawValue: t.type) ?? .expense,
+                    cents: t.cents, date: t.date, merchant: t.merchant, title: t.title, note: t.note,
+                    categoryID: t.categoryID, accountID: t.accountID,
+                    classificationSource: ClassificationSource(rawValue: t.source) ?? .manual,
+                    confidence: t.confidence, isUserCorrected: t.isUserCorrected
+                )
+                model.transactionID = t.id
+                model.createdAt = t.createdAt
+                model.updatedAt = t.updatedAt
+                context.insert(model)
+            }
+            for t in file.transfers {
+                let model = BudgetTransfer(
+                    fromCategoryID: t.fromCategoryID, toCategoryID: t.toCategoryID,
+                    cents: t.cents, date: t.date, note: t.note
+                )
+                model.transferID = t.id
+                context.insert(model)
+            }
+            for a in file.adjustments {
+                let model = BudgetAdjustment(
+                    categoryID: a.categoryID, year: a.year, month: a.month, cents: a.cents,
+                    type: AdjustmentType(rawValue: a.type) ?? .manual,
+                    reason: a.reason, date: a.date, relatedID: a.relatedID
+                )
+                model.adjustmentID = a.id
+                context.insert(model)
+            }
+            for r in file.rules {
+                let model = ClassificationRule(keyword: r.keyword, categoryID: r.categoryID)
+                model.ruleID = r.id
+                model.createdAt = r.createdAt
+                context.insert(model)
+            }
+            for goal in file.savingGoals ?? [] {
+                let model = SavingGoal(
+                    name: goal.name,
+                    categoryID: goal.categoryID,
+                    targetCents: goal.targetCents,
+                    targetDate: goal.targetDate
+                )
+                model.goalID = goal.id
+                model.createdAt = goal.createdAt
+                context.insert(model)
+            }
+            try context.save()
+        } catch {
+            context.rollback()
+            throw error
         }
-        for a in file.accounts {
-            let model = Account(
-                name: a.name, type: AccountType(rawValue: a.type) ?? .bank, icon: a.icon,
-                openingBalanceCents: a.openingBalanceCents,
-                includeInNetWorth: a.includeInNetWorth, sortOrder: a.sortOrder
-            )
-            model.accountID = a.id
-            context.insert(model)
-        }
-        for b in file.monthlyBudgets {
-            let model = MonthlyBudget(year: b.year, month: b.month)
-            model.monthlyBudgetID = b.id
-            model.allocatedCents = b.allocatedCents
-            context.insert(model)
-        }
-        for i in file.items {
-            let model = MonthlyBudgetItem(
-                monthlyBudgetID: i.monthlyBudgetID, year: i.year, month: i.month,
-                categoryID: i.categoryID, initialCents: i.initialCents, carryOverCents: i.carryOverCents
-            )
-            model.itemID = i.id
-            model.adjustedCents = i.adjustedCents
-            context.insert(model)
-        }
-        for t in file.transactions {
-            let model = Transaction(
-                type: TransactionType(rawValue: t.type) ?? .expense,
-                cents: t.cents, date: t.date, merchant: t.merchant, title: t.title, note: t.note,
-                categoryID: t.categoryID, accountID: t.accountID,
-                classificationSource: ClassificationSource(rawValue: t.source) ?? .manual,
-                confidence: t.confidence, isUserCorrected: t.isUserCorrected
-            )
-            model.transactionID = t.id
-            model.createdAt = t.createdAt
-            model.updatedAt = t.updatedAt
-            context.insert(model)
-        }
-        for t in file.transfers {
-            let model = BudgetTransfer(
-                fromCategoryID: t.fromCategoryID, toCategoryID: t.toCategoryID,
-                cents: t.cents, date: t.date, note: t.note
-            )
-            model.transferID = t.id
-            context.insert(model)
-        }
-        for a in file.adjustments {
-            let model = BudgetAdjustment(
-                categoryID: a.categoryID, year: a.year, month: a.month, cents: a.cents,
-                type: AdjustmentType(rawValue: a.type) ?? .manual,
-                reason: a.reason, date: a.date, relatedID: a.relatedID
-            )
-            model.adjustmentID = a.id
-            context.insert(model)
-        }
-        for r in file.rules {
-            let model = ClassificationRule(keyword: r.keyword, categoryID: r.categoryID)
-            model.ruleID = r.id
-            model.createdAt = r.createdAt
-            context.insert(model)
-        }
-        try context.save()
     }
 
     static func wipe(context: ModelContext) throws {
+        do {
+            try stageWipe(context: context)
+            try context.save()
+        } catch {
+            context.rollback()
+            throw error
+        }
+    }
+
+    /// 只把删除登记到当前 ModelContext，不提前保存，供覆盖恢复保持原子性。
+    private static func stageWipe(context: ModelContext) throws {
         let captures = try context.fetch(FetchDescriptor<CaptureInboxItem>())
         captures.forEach(context.delete)
+        let goals = try context.fetch(FetchDescriptor<SavingGoal>())
+        goals.forEach(context.delete)
         let transactions = try context.fetch(FetchDescriptor<Transaction>())
         transactions.forEach(context.delete)
         let adjustments = try context.fetch(FetchDescriptor<BudgetAdjustment>())
@@ -276,7 +326,6 @@ enum BackupService {
         accounts.forEach(context.delete)
         let categories = try context.fetch(FetchDescriptor<BudgetCategory>())
         categories.forEach(context.delete)
-        try context.save()
     }
 }
 

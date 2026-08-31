@@ -7,6 +7,7 @@ enum ServiceError: LocalizedError {
     case duplicateName(String)
     case categoryNotFound
     case categoryInUse(Int)
+    case categoryHasSavingGoals(Int)
     case transferSameCategory
     case transferExceedsRemaining
     case invalidBackupFile
@@ -23,6 +24,8 @@ enum ServiceError: LocalizedError {
             return "找不到对应的预算分区"
         case .categoryInUse(let count):
             return "该分区下还有 \(count) 笔消费记录，删除会导致记录失效"
+        case .categoryHasSavingGoals(let count):
+            return "该分区关联了 \(count) 个储蓄目标，请先删除或转移目标"
         case .transferSameCategory:
             return "不能在同一个分区之间转移"
         case .transferExceedsRemaining:

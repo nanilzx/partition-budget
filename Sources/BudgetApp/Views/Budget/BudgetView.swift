@@ -15,6 +15,8 @@ struct BudgetView: View {
     @Query(sort: [SortDescriptor(\Transaction.date, order: .reverse)])
     private var allTransactions: [Transaction]
 
+    @Query private var savingGoals: [SavingGoal]
+
     @State private var showingCategoryForm = false
     @State private var editingCategory: BudgetCategory?
     @State private var showingTransfer = false
@@ -87,7 +89,8 @@ struct BudgetView: View {
             } message: {
                 if let candidate = deleteCandidate {
                     let count = allTransactions.filter { $0.categoryID == candidate.categoryID }.count
-                    Text("「\(candidate.name)」还有 \(count) 笔消费记录。你可以改为隐藏它，历史记录会完整保留。")
+                    let goalCount = savingGoals.filter { $0.categoryID == candidate.categoryID }.count
+                    Text(inUseMessage(category: candidate, transactionCount: count, goalCount: goalCount))
                 }
             }
             .alert(
@@ -246,11 +249,23 @@ struct BudgetView: View {
     private func requestDelete(_ category: BudgetCategory) {
         deleteCandidate = category
         let count = allTransactions.filter { $0.categoryID == category.categoryID }.count
-        if count > 0 {
+        let goalCount = savingGoals.filter { $0.categoryID == category.categoryID }.count
+        if count > 0 || goalCount > 0 {
             showInUseAlert = true
         } else {
             showDeleteConfirm = true
         }
+    }
+
+    private func inUseMessage(
+        category: BudgetCategory,
+        transactionCount: Int,
+        goalCount: Int
+    ) -> String {
+        var reasons: [String] = []
+        if transactionCount > 0 { reasons.append("\(transactionCount) 笔消费记录") }
+        if goalCount > 0 { reasons.append("\(goalCount) 个储蓄目标") }
+        return "「\(category.name)」还有\(reasons.joined(separator: "和"))。你可以改为隐藏分区，相关数据会完整保留。"
     }
 
     private func performDelete() {
