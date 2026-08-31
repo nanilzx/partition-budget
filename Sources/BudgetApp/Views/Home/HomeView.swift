@@ -23,7 +23,6 @@ struct HomeView: View {
     @State private var selectedMonth = BudgetMonth.current
     @State private var showingAddSheet = false
     @State private var showingAllocation = false
-    @State private var editing: Transaction?
 
     private var monthTransactions: [Transaction] {
         allTransactions.filter { $0.year == selectedMonth.year && $0.month == selectedMonth.month }
@@ -69,9 +68,6 @@ struct HomeView: View {
         }
         .sheet(isPresented: $showingAddSheet) { AddTransactionSheet() }
         .sheet(isPresented: $showingAllocation) { AllocationView() }
-        .sheet(item: $editing) { txn in
-            AddTransactionSheet(editingTransaction: txn)
-        }
     }
 
     // MARK: - 主列表
@@ -81,7 +77,6 @@ struct HomeView: View {
             heroSection
             dailySection
             savingSection
-            recentSection
         }
         .dsMinimizeTabBarOnScroll()
         .navigationTitle("分区预算")
@@ -238,30 +233,6 @@ struct HomeView: View {
                     }
                 }
             }
-        }
-    }
-
-    private var recentSection: some View {
-        Section {
-            if monthTransactions.isEmpty {
-                Text("本月还没有记录")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
-            ForEach(Array(monthTransactions.prefix(5)), id: \.transactionID) { txn in
-                TransactionRowView(transaction: txn, categories: categories, accounts: accounts) {
-                    editing = txn
-                }
-            }
-            Button {
-                router.selectedTab = .transactions
-            } label: {
-                Text("查看全部记录")
-                    .font(.subheadline)
-            }
-            .foregroundStyle(.tint)
-        } header: {
-            Text("最近消费")
         }
     }
 
