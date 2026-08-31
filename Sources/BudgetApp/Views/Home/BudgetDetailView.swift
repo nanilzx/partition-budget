@@ -43,7 +43,11 @@ struct BudgetDetailView: View {
 
     private var recent: [Transaction] {
         allTransactions
-            .filter { $0.categoryID == category.categoryID }
+            .filter {
+                $0.categoryID == category.categoryID
+                    && $0.year == month.year
+                    && $0.month == month.month
+            }
             .prefix(5)
             .map { $0 }
     }

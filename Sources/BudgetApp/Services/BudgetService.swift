@@ -69,6 +69,8 @@ struct BudgetService {
     func deleteCategory(_ category: BudgetCategory) throws {
         let count = try transactionCount(categoryID: category.categoryID)
         guard count == 0 else { throw ServiceError.categoryInUse(count) }
+        let goalCount = try savingGoalCount(categoryID: category.categoryID)
+        guard goalCount == 0 else { throw ServiceError.categoryHasSavingGoals(goalCount) }
 
         // 无消费记录：连同各月预算项、转移与台账一起移除，避免悬挂引用。
         // 其他分区因转移获得的额度保持不变。
@@ -114,6 +116,12 @@ struct BudgetService {
 
     private func transactionCount(categoryID: UUID) throws -> Int {
         try context.fetch(FetchDescriptor<Transaction>())
+            .filter { $0.categoryID == categoryID }
+            .count
+    }
+
+    private func savingGoalCount(categoryID: UUID) throws -> Int {
+        try context.fetch(FetchDescriptor<SavingGoal>())
             .filter { $0.categoryID == categoryID }
             .count
     }

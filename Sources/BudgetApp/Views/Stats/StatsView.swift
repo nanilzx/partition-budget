@@ -5,6 +5,8 @@ import Charts
 /// 统计页（规格第十九节）：本月概览 + 每日支出柱状图 + 分区消费排行。
 /// 图表风格克制：无背景框、单色柱、无 3D。
 struct StatsView: View {
+    var month: BudgetMonth = .current
+
     @Environment(\.dismiss) private var dismiss
 
     @Query(sort: [SortDescriptor(\BudgetCategory.sortOrder), SortDescriptor(\BudgetCategory.createdAt)])
@@ -12,8 +14,6 @@ struct StatsView: View {
 
     @Query(sort: [SortDescriptor(\Transaction.date, order: .reverse)])
     private var allTransactions: [Transaction]
-
-    private let month = BudgetMonth.current
 
     private var monthTransactions: [Transaction] {
         allTransactions.filter { $0.year == month.year && $0.month == month.month }
@@ -29,6 +29,9 @@ struct StatsView: View {
     private var previousExpenseCents: Int64 { StatsCalculator.expenseCents(transactions: previousMonthTransactions) }
 
     private var elapsedDays: Int {
+        guard month == BudgetMonth.current else {
+            return StatsCalculator.daysInMonth(month)
+        }
         let today = Calendar.current.component(.day, from: Date())
         let total = StatsCalculator.daysInMonth(month)
         return min(today, total)
@@ -82,11 +85,11 @@ struct StatsView: View {
 
     private var overviewSection: some View {
         Section {
-            LabeledContent("本月支出") {
+            LabeledContent("\(month.month)月支出") {
                 Text(Money(cents: monthExpenseCents).displayText)
                     .fontWeight(.semibold)
             }
-            LabeledContent("本月收入") {
+            LabeledContent("\(month.month)月收入") {
                 Text(Money(cents: monthIncomeCents).displayText)
                     .foregroundStyle(.green)
             }
@@ -117,7 +120,7 @@ struct StatsView: View {
                 }
             }
         } header: {
-            Text("本月概览")
+            Text("\(month.title)概览")
         }
         .dsGlassRowCard()
     }

@@ -34,6 +34,24 @@ final class CategoryLifecycleTests: ServiceTestCase {
         XCTAssertEqual(try months.remainingCents(categoryID: dining.categoryID, month: m), 90000)
     }
 
+    func testDeleteCategoryWithSavingGoalIsBlocked() throws {
+        let saving = try makeCategory(name: "旅行基金", saving: true)
+        _ = try SavingGoalService(context: context).create(
+            name: "日本旅行",
+            categoryID: saving.categoryID,
+            targetCents: Money(yuan: 20_000).cents,
+            targetDate: nil
+        )
+
+        XCTAssertThrowsError(try budgets.deleteCategory(saving)) { error in
+            guard case ServiceError.categoryHasSavingGoals = error else {
+                return XCTFail("应为 categoryHasSavingGoals 错误，实际：\(error)")
+            }
+        }
+        XCTAssertEqual(try BudgetCategory.all(in: context).count, 1)
+        XCTAssertEqual(try SavingGoal.all(in: context).count, 1)
+    }
+
     func testDuplicateCategoryNameIsRejected() throws {
         _ = try makeCategory(name: "餐饮")
 
