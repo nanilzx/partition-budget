@@ -6,15 +6,13 @@ struct BudgetDetailView: View {
     let category: BudgetCategory
     let month: BudgetMonth
 
-    @Environment(AppRouter.self) private var router
-    @Environment(\.modelContext) private var context
-
     @Query(sort: [SortDescriptor(\Transaction.date, order: .reverse)])
     private var allTransactions: [Transaction]
 
     @Query private var items: [MonthlyBudgetItem]
 
     @State private var editing: Transaction?
+    @State private var showingAddSheet = false
 
     private var monthItem: MonthlyBudgetItem? {
         items.first {
@@ -86,12 +84,21 @@ struct BudgetDetailView: View {
                 }
             }
             Section {
-                Button {
-                    router.selectedTab = .transactions
-                } label: {
-                    Label("查看全部记录", systemImage: "list.bullet")
+                if month == BudgetMonth.current {
+                    Button {
+                        showingAddSheet = true
+                    } label: {
+                        Label("在此分区记一笔", systemImage: "plus.circle")
+                    }
+                    .dsGlassRowCard(position: .first)
                 }
-                .dsGlassRowCard()
+
+                NavigationLink {
+                    CategoryTransactionsView(category: category, month: month)
+                } label: {
+                    Label("查看本月全部记录", systemImage: "list.bullet")
+                }
+                .dsGlassRowCard(position: month == BudgetMonth.current ? .last : .single)
             }
         }
         .dsGlassListSurface()
@@ -99,6 +106,9 @@ struct BudgetDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $editing) { txn in
             AddTransactionSheet(editingTransaction: txn)
+        }
+        .sheet(isPresented: $showingAddSheet) {
+            AddTransactionSheet(prefilledCategoryID: category.categoryID)
         }
     }
 
@@ -114,5 +124,52 @@ struct BudgetDetailView: View {
         }
         .frame(height: DS.barHeight)
         .animation(.easeOut(duration: 0.25), value: usageRatio)
+    }
+}
+
+/// 当前分区当前月份的完整记录，避免从详情页跳到失去筛选条件的全局记录页。
+private struct CategoryTransactionsView: View {
+    let category: BudgetCategory
+    let month: BudgetMonth
+
+    @Query(sort: [SortDescriptor(\Transaction.date, order: .reverse)])
+    private var allTransactions: [Transaction]
+
+    @State private var editing: Transaction?
+
+    private var transactions: [Transaction] {
+        allTransactions.filter {
+            $0.categoryID == category.categoryID
+                && $0.year == month.year
+                && $0.month == month.month
+        }
+    }
+
+    var body: some View {
+        List {
+            Section {
+                if transactions.isEmpty {
+                    Text("这个分区本月还没有消费记录")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .dsGlassRowCard()
+                } else {
+                    ForEach(Array(transactions.enumerated()), id: \.element.id) { index, transaction in
+                        TransactionRowView(transaction: transaction, categories: [category]) {
+                            editing = transaction
+                        }
+                        .dsGlassRowCard(position: .init(index: index, count: transactions.count))
+                    }
+                }
+            } header: {
+                Text("\(month.title) · 共 \(transactions.count) 笔")
+            }
+        }
+        .dsGlassListSurface()
+        .navigationTitle("\(category.name)记录")
+        .navigationBarTitleDisplayMode(.inline)
+        .sheet(item: $editing) { transaction in
+            AddTransactionSheet(editingTransaction: transaction)
+        }
     }
 }

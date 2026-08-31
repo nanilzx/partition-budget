@@ -258,14 +258,7 @@ struct HomeView: View {
                 BudgetDetailView(category: category, month: selectedMonth)
             }
         } label: {
-            HStack(spacing: 12) {
-                BudgetCategoryRowView(card: card)
-                if showsChevron {
-                    Image(systemName: "chevron.right")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.tertiary)
-                }
-            }
+            BudgetCategoryRowView(card: card)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, showsChevron ? 20 : 0)
             .padding(.vertical, showsChevron ? 14 : 0)

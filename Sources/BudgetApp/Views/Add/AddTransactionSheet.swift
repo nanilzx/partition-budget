@@ -6,6 +6,7 @@ import SwiftData
 struct AddTransactionSheet: View {
     var editingTransaction: Transaction? = nil
     var capture: CapturePrefill? = nil
+    var prefilledCategoryID: UUID? = nil
     var onSaved: (() -> Void)? = nil
 
     @Environment(\.modelContext) private var context
@@ -121,6 +122,10 @@ struct AddTransactionSheet: View {
                     model.suggestCategory(context: context)
                     amountFocused = true
                 } else if editingTransaction == nil {
+                    if let prefilledCategoryID,
+                       let category = allCategories.first(where: { $0.categoryID == prefilledCategoryID }) {
+                        model.selectCategory(category, context: context)
+                    }
                     amountFocused = true
                 } else {
                     model.load(editingTransaction: editingTransaction)
