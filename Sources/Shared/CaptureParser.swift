@@ -56,8 +56,10 @@ public enum CaptureParser {
     private static let channels = [
         "微信支付", "支付宝", "财付通", "云闪付", "银联", "美团", "京东", "滴滴", "抖音",
     ]
-    private static let expenseIndicators = ["消费", "支付", "扣款", "扣费", "付款", "支出"]
-    private static let incomeIndicators = ["收入", "入账", "转入", "存入", "工资"]
+    private static let expenseIndicators = [
+        "消费", "支付", "扣款", "扣费", "付款", "支出", "支取", "转出", "取现", "代扣", "划扣",
+    ]
+    private static let incomeIndicators = ["收入", "入账", "到账", "转入", "存入", "收款", "工资"]
     private static let refundIndicators = ["退款", "退货", "冲正", "撤销"]
 
     // MARK: - 银行扣款短信
@@ -94,6 +96,72 @@ public enum CaptureParser {
             cardLastFour: extractCardLastFour(from: normalized),
             confidence: transactionKind == .refund ? min(confidence, 0.8) : confidence
         )
+    }
+
+    /// 快捷指令在短时间内收到多条信息时，偶尔会把它们作为一段文本传入。
+    /// 优先按可独立解析的行拆分；没有换行时，再按短信开头/结尾的银行签名拆分。
+    public static func splitBankSMSPayload(_ payload: String) -> [String] {
+        let normalized = payload
+            .replacingOccurrences(of: "\r\n", with: "\n")
+            .replacingOccurrences(of: "\r", with: "\n")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalized.isEmpty else { return [] }
+
+        let lines = normalized
+            .components(separatedBy: "\n")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        if lines.count > 1, lines.allSatisfy({ parseBankSMS($0) != nil }) {
+            return lines
+        }
+
+        guard let regex = try? NSRegularExpression(pattern: "【[^】\\n]{1,20}银行】") else {
+            return [normalized]
+        }
+        let nsText = normalized as NSString
+        let matches = regex.matches(
+            in: normalized,
+            range: NSRange(location: 0, length: nsText.length)
+        )
+        guard matches.count > 1 else { return [normalized] }
+
+        let leadingText = nsText.substring(to: matches[0].range.location)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        var candidates: [String] = []
+
+        if leadingText.isEmpty {
+            // 「【某银行】正文」格式：银行签名是每条短信的开头。
+            for index in matches.indices {
+                let start = matches[index].range.location
+                let end = index + 1 < matches.count
+                    ? matches[index + 1].range.location
+                    : nsText.length
+                candidates.append(nsText.substring(with: NSRange(location: start, length: end - start)))
+            }
+        } else {
+            // 「正文【某银行】」格式（中国银行常见）：银行签名是每条短信的结尾。
+            var start = 0
+            for match in matches {
+                let end = NSMaxRange(match.range)
+                candidates.append(nsText.substring(with: NSRange(location: start, length: end - start)))
+                start = end
+            }
+            if start < nsText.length {
+                let remainder = nsText.substring(from: start)
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                if !remainder.isEmpty, var last = candidates.popLast() {
+                    last += remainder
+                    candidates.append(last)
+                }
+            }
+        }
+
+        let messages = candidates
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        return messages.count > 1 && messages.allSatisfy({ parseBankSMS($0) != nil })
+            ? messages
+            : [normalized]
     }
 
     /// 短信里的第一个交易金额；跳过「尾号」「余额」前缀的数字（那是卡号与余额）。

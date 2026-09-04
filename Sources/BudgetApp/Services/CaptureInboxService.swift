@@ -13,29 +13,47 @@ struct CaptureInboxService {
 
     @discardableResult
     func enqueue(text: String, source: String = "银行短信") throws -> EnqueueResult {
-        let normalized = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        let payload = normalized.isEmpty
-            ? "快捷指令没有传入短信正文。请把“短信正文”设置为“快捷指令输入”的“正文”。"
-            : normalized
+        let results = try enqueueAll(text: text, source: source)
+        return results.first ?? .duplicate
+    }
 
-        let fingerprint = Self.fingerprint(for: payload)
+    /// 一次调用可以接收一条或多条短信；所有新记录在同一次保存中写入，避免只落下一半。
+    @discardableResult
+    func enqueueAll(text: String, source: String = "银行短信") throws -> [EnqueueResult] {
+        let normalized = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let payloads = normalized.isEmpty
+            ? ["快捷指令没有传入短信正文。请把“短信正文”设置为“快捷指令输入”的“正文”。"]
+            : CaptureParser.splitBankSMSPayload(normalized)
         let existing = try context.fetch(FetchDescriptor<CaptureInboxItem>())
-        guard !existing.contains(where: { $0.fingerprint == fingerprint }) else {
-            return .duplicate
+        var knownFingerprints = Set(existing.map(\.fingerprint))
+        var results: [EnqueueResult] = []
+        var insertedAny = false
+
+        for payload in payloads {
+            let fingerprint = Self.fingerprint(for: payload)
+            guard knownFingerprints.insert(fingerprint).inserted else {
+                results.append(.duplicate)
+                continue
+            }
+
+            let parsed = normalized.isEmpty ? nil : CaptureParser.parseBankSMS(payload)
+            let item = CaptureInboxItem(
+                fingerprint: fingerprint,
+                parsed: parsed,
+                rawText: payload,
+                source: source
+            )
+            context.insert(item)
+            insertedAny = true
+            results.append(
+                parsed == nil
+                    ? .insertedNeedsReview(item.captureID)
+                    : .insertedRecognized(item.captureID)
+            )
         }
 
-        let parsed = normalized.isEmpty ? nil : CaptureParser.parseBankSMS(normalized)
-        let item = CaptureInboxItem(
-            fingerprint: fingerprint,
-            parsed: parsed,
-            rawText: payload,
-            source: source
-        )
-        context.insert(item)
-        try context.save()
-        return parsed == nil
-            ? .insertedNeedsReview(item.captureID)
-            : .insertedRecognized(item.captureID)
+        if insertedAny { try context.save() }
+        return results
     }
 
     func markRecorded(_ item: CaptureInboxItem) throws {

@@ -77,4 +77,29 @@ final class CaptureParserTests: XCTestCase {
         XCTAssertEqual(parsed.merchant, "中国银行")
         XCTAssertNotNil(parsed.date)
     }
+
+    func testSplitTwoConsecutiveBankOfChinaMessagesWithoutNewline() throws {
+        let income = "您的借记卡/账户1833于08月30日银联入账人民币1.00元（刘子轩）,交易后余额1929.84【中国银行】"
+        let expense = "您的借记卡账户1833，于08月30日网上支付支取人民币1.00元,交易后余额1928.84【中国银行】"
+
+        let messages = CaptureParser.splitBankSMSPayload(income + expense)
+
+        XCTAssertEqual(messages, [income, expense])
+        XCTAssertEqual(messages.compactMap { CaptureParser.parseBankSMS($0, now: now) }.count, 2)
+    }
+
+    func testSplitTwoLeadingBankSignatureMessagesOnSeparateLines() {
+        let first = "【招商银行】您尾号1234的储蓄卡8月30日12:30支付宝支付10.00元，余额999.00元。"
+        let second = "【招商银行】您尾号1234的储蓄卡8月30日12:31微信支付20.00元，余额979.00元。"
+
+        XCTAssertEqual(CaptureParser.splitBankSMSPayload(first + "\n" + second), [first, second])
+    }
+
+    func testAdditionalDebitAndCreditWording() throws {
+        let debit = try XCTUnwrap(CaptureParser.parseBankSMS("【中国银行】账户1833于9月4日支取人民币8.00元。", now: now))
+        let credit = try XCTUnwrap(CaptureParser.parseBankSMS("【中国银行】账户1833于9月4日到账人民币18.00元。", now: now))
+
+        XCTAssertEqual(debit.transactionKind, .expense)
+        XCTAssertEqual(credit.transactionKind, .income)
+    }
 }
