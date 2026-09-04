@@ -1,161 +1,169 @@
-# 分区预算 (PartitionBudget)
+# 分区预算（PartitionBudget）
 
-一个原生 iOS 个人预算 App。核心体验只有一句话：
+[![iOS 编译与测试](https://github.com/nanilzx/partition-budget/actions/workflows/ios.yml/badge.svg)](https://github.com/nanilzx/partition-budget/actions/workflows/ios.yml)
+![iOS 17+](https://img.shields.io/badge/iOS-17%2B-black)
+![SwiftUI](https://img.shields.io/badge/UI-SwiftUI-orange)
+![Version](https://img.shields.io/badge/version-0.4.8-blue)
 
-> 收入一笔钱 → 提前分到不同用途 → 每消费一笔快速记账 → 系统自动扣对应分区的钱 → 随时打开，一眼看到每个预算还剩多少。
+一个原生、离线优先的 iOS 个人预算 App：先把钱分到不同用途，再记录每笔收支，随时查看每个预算分区还剩多少。
 
-**技术栈：SwiftUI + SwiftData，最低 iOS 17（iOS 26 上启用 Liquid Glass），零第三方依赖，数据全部保存在本机，离线完全可用。**
+> 收入一笔钱 → 分配到餐饮、学习、娱乐等用途 → 记录消费 → 对应分区自动扣减 → 首页即时显示余额。
 
-> **iOS 26 Liquid Glass**：首页汇总区、月份切换、悬浮「记一笔」等导航/控件层使用官方 `glassEffect` / `GlassEffectContainer` API，系统 Tab Bar / Toolbar 自动获得液态玻璃外观；旧系统自动回退 `.thinMaterial` / 系统样式。玻璃只用于强调层级，内容列表保持清晰克制。云端 CI 已切换到 macOS 26 + Xcode 26 SDK。
+技术栈为 **SwiftUI + SwiftData**，最低支持 iOS 17，无第三方运行时依赖。数据默认只保存在本机；iOS 26 使用官方 Liquid Glass API，旧系统自动回退到系统材质。
 
----
+## 当前版本：0.4.8
 
-## 当前状态：第一阶段核心闭环 MVP ✅
+### 核心功能
 
-| 能力 | 状态 |
-| --- | --- |
-| 预算分区管理（新增/编辑/删除保护/拖拽排序/隐藏/图标颜色/储蓄类标记） | ✅ |
-| 月度预算与分配（本月收入 / 已分配 / 未分配，逐分区设置金额） | ✅ |
-| 记一笔（金额+描述最少两步；按历史与内置词库自动推荐分类，可确认/修改） | ✅ |
-| 自动扣减预算，首页立即刷新；支出/收入都支持 | ✅ |
-| 修改/删除消费 → 预算自动重算/恢复（跨分区、跨月改动也正确） | ✅ |
-| 预算转移（不能超过来源剩余，双向台账留痕） | ✅ |
-| 超支处理：五选项（仍然记录/转入差额/增加预算/更换分区/取消），不强制拦截 | ✅ |
-| 月度切换、历史月查看；新月自动生成；按分区设置余额结转（负数不结转） | ✅ |
-| 记录页：搜索 / 类型 / 分区 / 金额范围 / 时间范围筛选，编辑与删除 | ✅ |
-| 分区消费记录视图、首页储蓄分区独立展示 | ✅ |
-| **自动识别记账：银行短信快捷指令识别 → 预填确认单** | ✅ |
-| **基础统计页：本月概览 / 每日支出柱状图（Apple Charts）/ 分区消费排行 / 较上月** | ✅ |
-| **储蓄目标：目标金额 / 进度追踪 / 按每月投入估算完成时间** | ✅ |
-| **资金账户系统：账户管理、交易绑定、余额派生、总资产展示（与预算分开统计）** | ✅ |
-| **自定义分类规则：优先级最高的用户规则、纠正自动学习、规则管理页** | ✅ |
-| **数据导出/导入：全量 JSON 备份与覆盖恢复** | ✅ |
-| **原生 iOS 视觉重构：List/Section 结构、大数字焦点、轻量进度行、ContentUnavailableView、克制动画与触感** | ✅ |
-| 核心财务逻辑单元测试（扣减/恢复/差值/跨分区/跨月/超支/结转/转移/删除保护/识别解析/账户/规则/备份） | ✅ |
+- 预算分区：新增、编辑、排序、隐藏、删除保护、自定义图标与颜色。
+- 月度预算：收入、已分配、未分配、历史月份、自动新建月份和余额结转。
+- 快速记账：支出与收入、分类推荐、账户绑定、编辑、删除和跨月修改。
+- 预算联动：新增、修改或删除交易后，分区余额由交易重新计算，不依赖手工累加。
+- 超支处理：仍然记录、转入差额、增加预算、更换分区或取消。
+- 预算转移：在分区之间移动当月额度，并保留调整台账。
+- 记录与统计：搜索、组合筛选、每日支出图表、分区排行、较上月数据。
+- 储蓄目标：目标金额、目标日期、进度和预计完成时间。
+- 资金账户：银行卡、微信、支付宝等账户余额及总资产统计，与预算分开管理。
+- 分类规则：内置词库、历史推荐、用户纠正规则和规则管理。
+- 本地备份：全量 JSON 导出和覆盖恢复。
+- 银行短信：通过 iOS 快捷指令识别消费、收入和退款，进入待确认列表后再入账。
 
-第二批（已完成）：~~账户系统~~ / ~~自定义分类规则~~ / ~~导出导入~~ / ~~基础统计~~ / ~~储蓄目标~~ ✅；AI 按需求不引入；Face ID 与截图识别按反馈已移除。
+### 外观模式
 
----
+“我的 → 外观”提供一个开关：
 
-## 自动识别记账（银行短信快捷指令）
+- 关闭：仅首页顶部汇总卡片使用玻璃效果，其余页面保持系统原生平面样式。
+- 开启：预算、记录、统计、账户等卡片也使用玻璃效果。
 
-先说清楚平台边界：**iOS 不允许 App 在后台监听微信/支付宝的通知**，所以不存在安卓式"全自动记账"。银行短信自动化是 Apple 官方认可的路径，全部在本机完成；识别结果会持久化到**短信待确认**列表，你确认后才入账：
+多行玻璃分区共用连续外轮廓，内部只保留一条分隔线，避免相邻行出现双层边框。首页预算行整行均可点击，并进入对应分区详情。
 
-1. 安装新版后先打开一次「分区预算」，让 iOS 建立 App Intent 索引；
-2. 打开 iPhone 自带「快捷指令」App → 「自动化」→ 新建个人自动化 → 触发条件选**「信息」**，发件人选择银行短信号码（无法选择时先存为联系人），并选择**「立即运行」**；
-3. 在该自动化的操作页面中选择「添加操作」→「App」→「分区预算」→ 选择 **「接收银行短信正文」**；不要在“所有快捷指令”页面直接运行旧的“识别消费”卡片；
-4. 新操作会优先自动连接前一步收到的信息。如果“短信正文”仍为空，再点它 → 选择**「快捷指令输入」**→ 将详细信息设为**「正文」**；
-5. 收到符合条件的短信后，系统会在后台解析并持久化到「我的 → 银行短信待确认」。确认后才进入正式账本，相同短信不会重复添加。
+## 银行短信自动记账
 
-> 短信解析只在本机进行；当前识别消费、收入和退款短信，并自动跳过余额、可用额度等非交易金额。无法识别或没有正确传入正文时也会进入待确认列表并显示诊断，不会静默丢失。确认或忽略后，完整短信正文会被清除，仅保留交易摘要和匿名去重指纹。
-> （截图识别功能已按使用反馈移除；为什么不做"读微信/支付宝通知"：iOS 没有这个 API，任何声称能做到的 App 都是在用高危私有手段。）
+iOS 不允许普通 App 在后台读取短信数据库，也不能监听微信或支付宝通知。本项目使用 Apple 提供的“信息”个人自动化，把收到的银行短信正文交给 App 在本机解析。
 
----
+### 快捷指令配置
 
-## 如何在云端验证（没有 Mac 也能用）
+1. 安装 App 后至少打开一次，让 iOS 注册“分区预算”的 App Intent。
+2. 打开“快捷指令”→“自动化”→ 新建个人自动化。
+3. 触发条件选择“信息”，发件人选择银行短信号码，并选择“立即运行”。
+4. 添加操作：“App”→“分区预算”→“接收银行短信正文”。
+5. 正常情况下，蓝色的“短信正文”会自动连接到上一步收到的信息。如果没有自动连接，选择“快捷指令输入”的“正文/信息正文”。
+6. 收到短信后，到“我的 → 银行短信待确认”核对金额、类型和分区，再确认入账。
 
-本仓库自带 GitHub Actions 工作流（`.github/workflows/ios.yml`），每次 push 都会在 macOS 云端：
+不要在“所有快捷指令”页面直接手动运行这个 App 操作；脱离“收到信息”自动化时，它没有短信正文可读取。
 
-1. 用 [XcodeGen](https://github.com/yonaskolb/XcodeGen) 从 `project.yml` 生成 Xcode 工程；
-2. 跑全部单元测试（财务正确性回归）；
-3. 打包一个**未签名 IPA** 存到构建产物 Artifacts。
+### 连续短信可靠性
 
-### 步骤
+0.4.8 对短时间连续到达的短信进行了专项处理：
 
-```bash
-# 1. 在 GitHub 建一个私有仓库（例如 partition-budget），然后：
-cd 本项目目录
-git remote add origin https://github.com/<你的用户名>/partition-budget.git
-git push -u origin main
+- 如果快捷指令把多条短信合并成一次文本，App 会按银行签名或可独立解析的行拆成多笔。
+- 多笔结果在同一次保存中写入，避免只落下第一笔。
+- 后台数据库短暂繁忙时，会使用新的数据上下文进行最多 4 次退避重试。
+- 去重基于每条完整短信的匿名 SHA-256 指纹；格式相似但金额、时间或余额不同的短信仍会分别保存。
+- 增加了“支取、转出、取现、代扣、划扣、到账、收款”等常见交易措辞。
+- 无法完整识别的非空输入仍会进入待确认列表，并显示诊断信息，不会静默丢弃。
 
-# 2. 打开仓库的 Actions 页，等两个 job 变绿：
-#    - test  → 编译 + 单元测试通过
-#    - ipa   → 下载 Artifacts 里的 BudgetApp-unsigned-ipa
+目前已覆盖的中国银行示例：
+
+```text
+您的借记卡/账户1833于08月30日银联入账人民币1.00元（刘子轩）,交易后余额1929.84【中国银行】
+您的借记卡账户1833，于08月30日网上支付支取人民币1.00元,交易后余额1928.84【中国银行】
 ```
 
-### 把 IPA 装进自己的 iPhone（免费路线）
+> 边界说明：如果 iOS 完全没有启动某次个人自动化，App 无法读取或补回那条短信。本项目能处理的是自动化已经触发后发生的合并输入、相似文本、重复调用和瞬时写入冲突。
 
-1. Windows 电脑安装 [AltServer](https://altstore.io/)，iPhone 与电脑同一 Wi-Fi，装好 AltStore；
-2. 用你的 Apple ID 在 AltStore 登录（免费 Apple ID 即可）；
-3. 把下载的 IPA 拖进 AltStore → 安装到手机；
-4. 注意：免费签名 **7 天过期**，连着同一 Wi-Fi 时 AltStore 会自动续签；IPA 里已含 UI 所需全部资源，无需 App Store。
+短信解析全部在本机完成。确认或忽略后，完整短信正文会被清除，只保留交易摘要和匿名去重指纹。
 
-### 长期推荐路线（99 美元/年）
+## 分区详情
 
-注册 Apple Developer Program 后，同一工程可以配置自动签名 + 上传 TestFlight（第二批会把 fastlane 脚本配好），iPhone 直接装 TestFlight 版，90 天有效期、无需电脑续签。Bundle ID 目前是占位符 `com.partitionbudget.app`，届时在 `project.yml` 里改成你自己的即可。
+点击首页任意预算分区会进入对应详情页：
 
----
+- 查看该月总预算、已使用、剩余金额和进度。
+- 查看最近 5 笔相关记录。
+- 当前月份可选择“在此分区记一笔”，表单会自动预选该分区。
+- “查看本月全部记录”只显示当前分区、当前月份的数据，不会丢失筛选条件跳到全局列表。
+- 历史月份不显示新增记账入口，避免误把新交易记入错误月份。
 
-## 如何在有 Mac 时本地开发
+## 数据正确性原则
+
+1. 金额统一使用“分”（`Int64`）存储和运算，展示时才格式化为人民币。
+2. 已使用金额始终由当月交易派生；新增、编辑、改分类、改日期或删除后都会重新得到正确余额。
+3. 月度数据按“年 + 月”隔离，历史月份不会与当前月份混算。
+4. 开启结转后，新月额度为默认预算加上月非负剩余；超支负数不结转。
+5. 初始化、手动调整、预算转移和结转均写入 `BudgetAdjustment` 台账。
+6. 有交易或储蓄目标的分区不能直接删除，只能隐藏，避免历史数据失效。
+7. 预算允许为负；超支时提供处理选择，不阻止用户记录真实消费。
+
+## 构建与测试
+
+仓库包含 GitHub Actions 工作流 [`.github/workflows/ios.yml`](.github/workflows/ios.yml)。每次 push 或 pull request 会在 macOS 26 上：
+
+1. 使用 XcodeGen 从 `project.yml` 生成 Xcode 工程。
+2. 在 iOS 模拟器运行全部单元测试。
+3. 使用 Release 配置归档并生成未签名 IPA。
+4. 将 `BudgetApp-unsigned-ipa` 上传到该次 Actions 运行的 Artifacts。
+
+### 在 Mac 上开发
 
 ```bash
-brew install xcodegen          # 一次性
-xcodegen generate              # 生成 PartitionBudget.xcodeproj
+brew install xcodegen
+xcodegen generate
 open PartitionBudget.xcodeproj
-# Xcode 里：Target BudgetApp → Signing & Capabilities → 选择你的 Personal Team
-# 选一台 iOS 17+ 的模拟器或真机，Cmd+R 运行
 ```
 
-命令行跑测试：
+在 Xcode 中打开 `BudgetApp` Target 的 Signing & Capabilities，选择自己的开发团队后即可在模拟器或真机运行。
+
+命令行测试：
 
 ```bash
-xcodebuild test -project PartitionBudget.xcodeproj -scheme BudgetApp \
-  -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest'
+xcodebuild test \
+  -project PartitionBudget.xcodeproj \
+  -scheme BudgetApp \
+  -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest' \
+  -skipMacroValidation
 ```
 
-> `.xcodeproj` 不入库（见 `.gitignore`），任何机器上都用 `xcodegen generate` 一条命令重建，避免工程文件冲突。
+`.xcodeproj` 不提交到仓库，任何开发环境都通过 `xcodegen generate` 重建。
 
----
+### 安装未签名 IPA
 
-## 目录结构
+Actions 生成的是未签名 IPA，不能直接点开安装。可以使用 AltStore、SideStore 或自己的 Apple Developer 证书重新签名。免费 Apple ID 签名通常需要每 7 天续签；正式分发建议配置 Apple Developer Program 和 TestFlight。
 
-```
-project.yml                     XcodeGen 工程定义（App + Tests 两个 target）
-.github/workflows/ios.yml       云端编译 + 测试 + IPA 产物
+## 项目结构
+
+```text
+project.yml                         XcodeGen 工程与版本配置
+.github/workflows/ios.yml           云端编译、测试和 IPA 打包
+Sources/Shared/                     金额与银行短信纯解析逻辑
 Sources/BudgetApp/
-  BudgetApp.swift               入口：ModelContainer 初始化
-  Models/                       BudgetCategory / Transaction / MonthlyBudget /
-                                MonthlyBudgetItem / BudgetTransfer / BudgetAdjustment / ServiceError
-  Services/                     核心业务逻辑（不在 UI 里）
-    MonthlyBudgetService        月度创建（幂等）、结转、从交易派生已花/剩余/收入
-    TransactionService          记/改/删消费与收入（预算联动靠派生自动成立）
-    BudgetService               分区管理、预算调整、转移、台账
-    ClassificationService       分类推荐：历史记录 > 内置词库（预留用户规则与 AI 接口）
-  ViewModels/                   路由、记一笔表单状态机、首页计算、筛选条件
-  Views/                        Home / Budget / Transaction / Settings 四个 Tab
-  Utilities/                    Money(分) / BudgetMonth / 日期格式化 / 种子数据 / 内置词库
-Tests/BudgetAppTests/           财务逻辑回归测试（内存数据库，逐用例隔离）
+  Intents/                          快捷指令 App Intent
+  Models/                           SwiftData 数据模型
+  Services/                         预算、交易、账户、备份、短信待确认等业务逻辑
+  ViewModels/                       页面状态、计算器、筛选与导航
+  Views/                            首页、预算、记录、统计和设置界面
+  Utilities/                        设计规范、月份、格式化与种子数据
+Tests/BudgetAppTests/               使用内存数据库的业务与解析回归测试
 ```
 
----
+## 已知限制
 
-## 数据正确性设计（本项目的第一优先级）
-
-1. **金额一律以「分」（Int64）存储运算**，展示时才格式化为 ¥，杜绝浮点误差。
-2. **单一事实来源**：「已花」永远等于当月该分区全部支出交易之和（派生），不存在手工加减的余额。
-   因此新增、修改金额、修改分区、跨月改日期、删除记录，预算余额都自动正确，不可能漂移。
-3. **台账（BudgetAdjustment）**：初始化、手动调整、转移转入/转出、结转，每一笔都留痕（含原因与关联单据），不保存无历史的余额。
-4. **月度隔离**：预算按 (年, 月) 组织；打开 App 自动惰性生成当月预算，历史月只读展示。
-5. **结转规则**：开启结转的分区，新月额度 = 默认月预算 + max(0, 上月剩余)；超支的负数不结转；结转不算「新分配」（不进未分配的减项）。
-6. **删除保护**：分区下有消费记录时禁止删除（可隐藏），历史记录永不失效；无记录才允许真删，并同步清理其预算项与台账。
-7. **超支不拦截**：余额可以为负；记账时提示差额并提供五种处理方式，预算是决策工具不是枷锁。
-8. **离线优先**：全部功能本地可用；AI 只作为分类的增强层（本批未接入，接口已预留），删除 AI 也不影响任何核心功能。
-
-### 与规格第二十七节的字段映射
-
-规格中的 `id` 字段在本实现中为显式命名的 `categoryID / transactionID / monthlyBudgetID / itemID / transferID / adjustmentID`（避免与 SwiftData 持久化标识冲突）；`spentAmount/remainingAmount` 不落库，由交易派生（见第 2 点）；`MonthlyBudget.totalIncome` 由当月收入交易求和派生。其余字段一一对应。
-
----
-
-## 已知简化（第二批处理）
-
-- 负余额不结转；若提前给下月记账，下月结转额会按当时快照锁定。
-- 「消费内容」同时充当描述与商户名（编辑页后续拆分）。
-- 储蓄目标的「目标金额/目标日期/建议月投入」UI 属第二批（当前储蓄分区已支持逐月结转累积）。
-- 首月使用时若从未记录收入，「未分配」会显示为负数——分配页有提示，先记收入即可。
+- iOS 未触发“信息”个人自动化时，App 无法主动读取遗漏的短信。
+- 微信、支付宝通知无法由普通 iOS App 在后台读取。
+- 当前没有 iCloud 多设备同步，数据备份需要手动导出 JSON。
+- 未签名 IPA 需要用户自行签名；仓库不包含证书、Provisioning Profile 或开发者密钥。
+- 如果提前给未来月份记账，该月结转额度会按生成时的数据快照计算。
 
 ## 路线图
 
-- [x] 第一批：核心闭环 MVP（当前）
-- [ ] 第二批：账户系统 / 自定义分类规则 / AI 接入 / 基础统计 / Face ID / 导出导入 / 储蓄目标详情
-- [ ] 第三批：Widget、Siri 快捷指令、iCloud 同步、CSV 与账单导入、周报月报
+- [x] 核心分区预算、交易联动、超支处理和月份结转
+- [x] 账户系统、分类规则、统计、储蓄目标和 JSON 备份
+- [x] iOS 26 Liquid Glass 与可切换的全卡片玻璃模式
+- [x] 银行短信 App Intent、待确认流程和连续短信可靠入队
+- [ ] Widget 与更完整的 Siri 快捷指令
+- [ ] iCloud 同步
+- [ ] CSV/账单文件批量导入
+- [ ] 周报与月报
+
+## 隐私
+
+项目不依赖服务器，不上传预算、账户或短信内容，也不要求 API Key。所有识别和财务计算均在设备本地完成。
